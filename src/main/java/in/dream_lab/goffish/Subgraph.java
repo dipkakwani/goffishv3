@@ -9,6 +9,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.bsp.BSPPeer;
 
 public abstract class Subgraph {
   long subgraphID;
@@ -16,11 +17,15 @@ public abstract class Subgraph {
   private Map<Long, Vertex> _verticesID;
   private List<Vertex> _localVertices;
   private List<Edge> _edges;
-  int partitionID;
+  private int partitionID;
+  private boolean voteToHalt;
+  BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer;
   
-  Subgraph(long subgraphID, int partitionID) {
+  Subgraph(long subgraphID, 
+      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
     this.subgraphID = subgraphID;
-    this.partitionID = partitionID;
+    this.partitionID = peer.getPeerIndex();
+    this.peer = peer;
     _vertices = new ArrayList<Vertex>();
     _localVertices = new ArrayList<Vertex>();
     _verticesID = new HashMap<Long, Vertex>();
@@ -41,6 +46,22 @@ public abstract class Subgraph {
   
   long getSubgraphID() {
     return subgraphID;
+  }
+  
+  void voteToHalt() {
+    voteToHalt = true;
+  }
+  
+  boolean hasVotedToHalt() {
+    return voteToHalt;
+  }
+  
+  List<Vertex> getVertices() {
+    return _vertices;
+  }
+  
+  long getSuperStep() {
+    return peer.getSuperstepCount();
   }
   
   abstract void compute(List<Text> messages);

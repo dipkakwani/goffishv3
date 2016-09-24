@@ -155,22 +155,21 @@ public final class GraphJobRunner
     }
     
     formSubgraphs(_vertices, peer);
-    /*
-    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
-        .newCachedThreadPool();*/
+    
   }
   
   /* Forms subgraphs by finding (weakly) connected components. */
   void formSubgraphs(List<Vertex> vertices,
       BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
-    Partition <VertexCount> partition = new Partition<VertexCount>(peer.getPeerIndex());
+    Partition partition = new Partition(peer.getPeerIndex());
     long subgraphCount = 0;
     Set<Long> visited = new HashSet<Long>();
     
     for (Vertex v : vertices) {
       if (!visited.contains(v.getVertexID())) {
         long subgraphID = subgraphCount++ | (((long)partition.getPartitionID()) << 32);
-        Subgraph subgraph = new VertexCount(subgraphID, partition.getPartitionID());
+        Subgraph subgraph = new VertexCount(subgraphID, peer);
+        partition.addSubgraph(subgraph);
         dfs(v, visited, subgraph);
       }
     }
@@ -194,6 +193,28 @@ public final class GraphJobRunner
       BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer)
       throws IOException, SyncException, InterruptedException {
     
+    /*TODO: Make execute subgraphs compute in parallel.
+    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
+        .newCachedThreadPool();
+    executor.setMaximumPoolSize(64);*/
+    Partition partition = new Partition(peer.getPeerIndex());
+    boolean allVotedToHalt = false;
+    while (!allVotedToHalt) {
+      allVotedToHalt = true;
+      List<Text> messages = new ArrayList<Text>();
+      Text msg;
+      while ((msg = peer.getCurrentMessage()) != null) {
+        messages.add(msg);
+      }
+
+      for (Subgraph subgraph : partition.getSubgraphs()) {
+        if (!subgraph.hasVotedToHalt()) {
+          allVotedToHalt = false;
+          subgraph.compute(messages);
+        }
+      }
+    }
+
   }
 
   @Override
