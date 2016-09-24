@@ -44,6 +44,18 @@ public class GraphJob extends BSPJob {
     this.setJarByClass(exampleClass);
    
   }
+  
+  
+  
+  @Override
+  public void setPartitioner(
+      @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
+    super.setPartitioner(theClass);
+  }
+  
+  public void setMaxIteration(int maxIteration) {
+	    conf.setInt("hama.graph.max.iteration", maxIteration);
+	}
 
   @Override
   public void submit() throws IOException, InterruptedException {
