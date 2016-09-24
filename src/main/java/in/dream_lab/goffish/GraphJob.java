@@ -42,7 +42,7 @@ public class GraphJob extends BSPJob {
     super(conf); 
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
-   
+    this.setPartitioner(HashPartitioner.class);
   }
   
   

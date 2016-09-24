@@ -39,6 +39,7 @@ public class VertexCount extends Subgraph {
 	  e.printStackTrace();
 	}
     }
+    voteToHalt();
   }
   
   /*FIXME: Shouldn't be in user's logic. */
