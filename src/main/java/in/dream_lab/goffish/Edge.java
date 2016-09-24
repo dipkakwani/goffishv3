@@ -1,8 +1,8 @@
 package in.dream_lab.goffish;
 
 public class Edge {
-  Vertex _source;
-  Vertex _sink;
+  private Vertex _source;
+  private Vertex _sink;
   
   Edge(Vertex u, Vertex v) {
     _source = u;

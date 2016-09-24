@@ -14,6 +14,7 @@ public class Vertex {
     vertexID = ID;
     this.partitionID = partitionID;
     _adjList = new ArrayList<Edge>();
+    remoteSubgraphID = -1;
   }
   
   void addEdge(Vertex destination) {
@@ -31,6 +32,14 @@ public class Vertex {
   
   void setSubgraphID(long ID) {
     subgraphID = ID;
+  }
+  
+  void setRemoteSubgraphID(long ID) {
+    remoteSubgraphID = ID;
+  }
+  
+  boolean isRemote() {
+    return (remoteSubgraphID != -1);
   }
   
   List<Edge> outEdges() {

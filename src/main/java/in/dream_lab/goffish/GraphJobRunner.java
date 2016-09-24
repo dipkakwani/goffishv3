@@ -115,11 +115,11 @@ public final class GraphJobRunner
       if (sb == null) {
         sb = new StringBuilder();
         message.put(v.getVertexID(), sb);
-        sb.append(Long.toString(v.getVertexID()) + ';');
+        sb.append(Long.toString(v.getVertexID()) + ',');
       }
       for (Edge e : v.outEdges()) {
         Vertex sink = e.getSink();
-        sb.append(Long.toString(sink.getVertexID())).append(";");
+        sb.append(Long.toString(sink.getVertexID())).append(",");
       }
       int targetPeer = (int)(v.getVertexID() % numPeers);
       if (targetPeer != peer.getPeerIndex()) {
@@ -138,7 +138,7 @@ public final class GraphJobRunner
     Text msg;
     while ((msg = peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
-      String msgStringArr[] = msgString.split(";");
+      String msgStringArr[] = msgString.split(",");
       long vertexID = Long.parseLong(msgStringArr[0]);
       Vertex v = new Vertex(vertexID, (int)(vertexID % numPeers));
       _vertices.add(v);
@@ -153,15 +153,54 @@ public final class GraphJobRunner
         v.addEdge(e);
       }
     }
+    Partition partition = new Partition(peer.getPeerIndex());
+    formSubgraphs(_vertices, peer, partition);
     
-    formSubgraphs(_vertices, peer);
+    // Get subgraph IDs from neighbors
+    for (Vertex v : _vertices) {
+      if (v.getSubgraphID() != -1) {
+        for (Edge e : v.outEdges()) {
+          Vertex sink = e.getSink();
+          msg = new Text(sink.getVertexID() + "," + v.getVertexID() + "," + v.getSubgraphID());
+          peer.send(peer.getPeerName((int)(sink.getVertexID() % peer.getNumPeers())), msg);
+        }
+      }
+    }
+    peer.sync();
     
+    while ((msg = peer.getCurrentMessage()) != null) {
+      String msgString = msg.toString();
+      String msgStringArr[] = msgString.split(",");
+      Long sinkID = Long.parseLong(msgStringArr[0]);
+      Long sourceID = Long.parseLong(msgStringArr[1]);
+      for (Subgraph subgraph : partition.getSubgraphs()) {
+        Vertex sink = subgraph.getVertexByID(sinkID);
+        if (sink != null) {
+          int sourcePartiitionID = (int)(sourceID % peer.getNumPeers());
+          peer.send(peer.getPeerName(sourcePartiitionID), 
+              new Text(sink.getVertexID() + "," + sink.getSubgraphID() + "," + msgStringArr[2]));
+        }
+      }
+    }
+    
+    peer.sync();
+    
+    while ((msg = peer.getCurrentMessage()) != null) {
+      String msgString = msg.toString();
+      String msgStringArr[] = msgString.split(",");
+      Long sinkID = Long.parseLong(msgStringArr[0]);
+      Long remoteSubgraphID = Long.parseLong(msgStringArr[1]);
+      Long subgraphID = Long.parseLong(msgStringArr[2]);
+      Subgraph subgraph = partition.getSubgraph(subgraphID);
+      Vertex sink = subgraph.getVertexByID(sinkID);
+      sink.setRemoteSubgraphID(remoteSubgraphID);
+      
+    }
   }
   
   /* Forms subgraphs by finding (weakly) connected components. */
   void formSubgraphs(List<Vertex> vertices,
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
-    Partition partition = new Partition(peer.getPeerIndex());
+      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer, Partition partition) {
     long subgraphCount = 0;
     Set<Long> visited = new HashSet<Long>();
     
@@ -170,20 +209,25 @@ public final class GraphJobRunner
         long subgraphID = subgraphCount++ | (((long)partition.getPartitionID()) << 32);
         Subgraph subgraph = new VertexCount(subgraphID, peer);
         partition.addSubgraph(subgraph);
-        dfs(v, visited, subgraph);
+        dfs(v, visited, subgraph, peer);
       }
     }
   }
   
-  void dfs(Vertex v, Set<Long> visited, Subgraph subgraph) {
-    v.setSubgraphID(subgraph.getSubgraphID());
+  void dfs(Vertex v, Set<Long> visited, Subgraph subgraph,
+      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
+    long vertexID = v.getVertexID();
+    if (peer.getPeerIndex() == (int)(vertexID % peer.getNumPeers()))
+      v.setSubgraphID(subgraph.getSubgraphID());
+    else
+      v.setSubgraphID(-1);
     subgraph.addVertex(v);
     visited.add(v.getVertexID());
     for (Edge e : v.outEdges()) {
       subgraph.addEdge(e);
       Vertex sink = e.getSink();
       if (!visited.contains(sink.getVertexID())) {
-        dfs(sink, visited, subgraph);
+        dfs(sink, visited, subgraph, peer);
       }
     }
   }
