@@ -257,6 +257,7 @@ public final class GraphJobRunner
           subgraph.compute(messages);
         }
       }
+      peer.sync();
     }
 
   }
