@@ -40,6 +40,8 @@ public class GraphJob extends BSPJob {
   public GraphJob(HamaConfiguration conf, Class<? extends Subgraph> exampleClass)
       throws IOException {
     super(conf); 
+    conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);
+    conf.setBoolean("hama.use.unsafeserialization", true);
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setPartitioner(HashPartitioner.class);

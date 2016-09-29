@@ -20,35 +20,47 @@ package in.dream_lab.goffish;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.commons.cli.ParseException;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPPeer;
+import org.apache.hama.bsp.TextInputFormat;
+import org.apache.hama.bsp.TextOutputFormat;
 
-public class VertexCount extends Subgraph {
-  
-  void compute(List<Text> messages) {
-    if (getSuperStep() == 0) {
-      long count = 0;
-      for (Vertex v : getVertices()) {
-        if (!v.isRemote()) {
-          count++;
+public class VertexCount {
+  public static class VrtxCnt extends Subgraph
+  {
+	  /*FIXME: Shouldn't be in user's logic. */
+    VrtxCnt(long subgraphID, 
+	      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer) {
+	    super(subgraphID,  peer);
+	  }
+
+    void compute(List<Text> messages) {
+      if (getSuperStep() == 0) {
+        long count = 0;
+        for (Vertex v : getVertices()) {
+          if (!v.isRemote()) {
+            count++;
+          }
         }
-      }
-      try{
-        Text message=new Text(new Long(count).toString());
-        for (String peers:peer.getAllPeerNames()){
-          peer.send(peers, message);
+        try{
+          Text message=new Text(new Long(count).toString());
+          for (String peers:peer.getAllPeerNames()){
+            peer.send(peers, message);
+          }
         }
+        catch(IOException e)
+        {}
       }
-      catch(IOException e)
-      {}
-    }
-    else {
-      long totalVertices=0;
-      for(Text msg:messages){
-        String msgString = msg.toString();
-        totalVertices+=Long.parseLong(msgString);
-      }
+      else {
+        long totalVertices=0;
+        for(Text msg:messages){
+          String msgString = msg.toString();
+          totalVertices+=Long.parseLong(msgString);
+        }
       try {
           peer.write(new LongWritable(getSubgraphID()), new LongWritable(totalVertices));
 	} catch (IOException e) {
@@ -59,9 +71,22 @@ public class VertexCount extends Subgraph {
     voteToHalt();
   }
   
-  /*FIXME: Shouldn't be in user's logic. */
-  VertexCount(long subgraphID, 
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
-    super(subgraphID,  peer);
+  
+  }
+  public static void main(String args[]) throws IOException,InterruptedException, ClassNotFoundException, ParseException
+  {
+	  HamaConfiguration conf = new HamaConfiguration();
+	  GraphJob pageJob = new GraphJob(conf, VrtxCnt.class);
+	  pageJob.setJobName("Vertex Count");
+	  pageJob.setInputFormat(TextInputFormat.class);
+	  pageJob.setInputKeyClass(LongWritable.class);
+	  pageJob.setInputValueClass(LongWritable.class);
+	  pageJob.setOutputFormat(TextOutputFormat.class);
+	  pageJob.setOutputKeyClass(LongWritable.class);
+	  pageJob.setOutputValueClass(LongWritable.class);
+	  pageJob.setMaxIteration(2);
+	  pageJob.setInputPath(new Path(args[0]));
+	  pageJob.setOutputPath(new Path(args[1]));
+	  pageJob.waitForCompletion(true);
   }
 }

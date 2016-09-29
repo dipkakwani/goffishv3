@@ -36,16 +36,17 @@ public abstract class Subgraph {
   private List<Edge> _edges;
   private int partitionID;
   private boolean voteToHalt;
-  BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer;
+  BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer;
   
   Subgraph(long subgraphID, 
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer2) {
     this.subgraphID = subgraphID;
-    this.partitionID = peer.getPeerIndex();
-    this.peer = peer;
+    this.partitionID = peer2.getPeerIndex();
+    this.peer = peer2;
     _vertices = new ArrayList<Vertex>();
     _localVertices = new ArrayList<Vertex>();
     _verticesID = new HashMap<Long, Vertex>();
+    _edges = new ArrayList<Edge>();
   }
   
   void addVertex(Vertex v) {

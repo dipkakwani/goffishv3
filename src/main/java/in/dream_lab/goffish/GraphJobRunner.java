@@ -70,12 +70,12 @@ import org.apache.hama.util.WritableUtils;
  * @param <M> the value type of a vertex.
  */
 public final class GraphJobRunner
-    extends BSP<LongWritable, LongWritable, LongWritable, LongWritable, Text> {
+    extends BSP<LongWritable, Text, LongWritable, LongWritable, Text> {
 
   
   @Override
   public final void setup(
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer)
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer)
       throws IOException, SyncException, InterruptedException {
 
   
@@ -83,27 +83,33 @@ public final class GraphJobRunner
     List<Vertex> verticesList = new ArrayList<Vertex>();
     Map<Vertex, List<Edge>> adjList = new HashMap<Vertex, List<Edge>>();
     
-    KeyValuePair<LongWritable, LongWritable> pair;
+    KeyValuePair<LongWritable, Text> pair;
     long numPeers = peer.getNumPeers();
     while ((pair = peer.readNext()) != null) {
       long sourceID = pair.getKey().get();
-      long sinkID = pair.getValue().get();
+      String value[] = pair.getValue().toString().split("\t");
+      //long sourceID = Long.parseLong(value[0]);
+      String edgeList[] = value[1].split(" ");
       int targetSourcePeer = (int)(sourceID % numPeers);
-      int targetSinkPeer = (int)(sinkID % numPeers);
-      Vertex source = vertexMap.get(sourceID);
-      Vertex sink = vertexMap.get(sinkID);
-      if (source == null) {
-        source = new Vertex(sourceID, targetSourcePeer);   
-        vertexMap.put(sourceID, source);
-        verticesList.add(source);
+      for(String dest:edgeList)
+      {
+        long sinkID =Long.parseLong(dest);
+    	int targetSinkPeer = (int)(sinkID % numPeers);
+        Vertex source = vertexMap.get(sourceID);
+        Vertex sink = vertexMap.get(sinkID);
+        if (source == null) {
+          source = new Vertex(sourceID, targetSourcePeer);   
+          vertexMap.put(sourceID, source);
+          verticesList.add(source);
+        }
+        if (sink == null) {
+          sink = new Vertex(sinkID, targetSinkPeer);
+          vertexMap.put(sinkID, sink);
+          verticesList.add(source);
+        }
+        Edge e = new Edge(source, sink);
+        source.addEdge(e);
       }
-      if (sink == null) {
-        sink = new Vertex(sinkID, targetSinkPeer);
-        vertexMap.put(sinkID, sink);
-        verticesList.add(source);
-      }
-      Edge e = new Edge(source, sink);
-      source.addEdge(e);
     }
     Map<Long, StringBuilder> message = new HashMap<Long, StringBuilder>();
     List<Vertex> _vertices = new ArrayList<Vertex>();     // Final list of vertices.
@@ -156,13 +162,18 @@ public final class GraphJobRunner
     Partition partition = new Partition(peer.getPeerIndex());
     formSubgraphs(_vertices, peer, partition);
     
-    // Get subgraph IDs from neighbors
+    /* Get subgraph IDs from neighbors
+    * requires 2 supersteps bcoz the graph is directed
+    */
     for (Vertex v : _vertices) {
-      if (v.getSubgraphID() != -1) {
+      if (!v.isRemote()) {
         for (Edge e : v.outEdges()) {
           Vertex sink = e.getSink();
-          msg = new Text(sink.getVertexID() + "," + v.getVertexID() + "," + v.getSubgraphID());
-          peer.send(peer.getPeerName((int)(sink.getVertexID() % peer.getNumPeers())), msg);
+          if (sink.isRemote()){
+            msg = new Text(sink.getVertexID() + "," + v.getVertexID() + "," + v.getSubgraphID());
+            peer.send(peer.getPeerName((int)(sink.getVertexID() % peer.getNumPeers())), msg);
+        
+          }
         }
       }
     }
@@ -184,6 +195,7 @@ public final class GraphJobRunner
     }
     
     peer.sync();
+    System.out.println("Messages to all neighbours sent");
     
     while ((msg = peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
@@ -200,14 +212,14 @@ public final class GraphJobRunner
   
   /* Forms subgraphs by finding (weakly) connected components. */
   void formSubgraphs(List<Vertex> vertices,
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer, Partition partition) {
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer, Partition partition) {
     long subgraphCount = 0;
     Set<Long> visited = new HashSet<Long>();
     
     for (Vertex v : vertices) {
       if (!visited.contains(v.getVertexID())) {
         long subgraphID = subgraphCount++ | (((long)partition.getPartitionID()) << 32);
-        Subgraph subgraph = new VertexCount(subgraphID, peer);
+        Subgraph subgraph = new VertexCount.VrtxCnt(subgraphID, peer);
         partition.addSubgraph(subgraph);
         dfs(v, visited, subgraph, peer);
       }
@@ -215,7 +227,7 @@ public final class GraphJobRunner
   }
   
   void dfs(Vertex v, Set<Long> visited, Subgraph subgraph,
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer) {
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer) {
     long vertexID = v.getVertexID();
     if (peer.getPeerIndex() == (int)(vertexID % peer.getNumPeers()))
       v.setSubgraphID(subgraph.getSubgraphID());
@@ -234,7 +246,7 @@ public final class GraphJobRunner
   
   @Override
   public final void bsp(
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer)
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer)
       throws IOException, SyncException, InterruptedException {
     
     /*TODO: Make execute subgraphs compute in parallel.
@@ -264,7 +276,7 @@ public final class GraphJobRunner
 
   @Override
   public final void cleanup(
-      BSPPeer<LongWritable, LongWritable, LongWritable, LongWritable, Text> peer)
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer)
       throws IOException {
     
   }
