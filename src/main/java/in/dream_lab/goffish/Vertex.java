@@ -56,7 +56,7 @@ public class Vertex {
   }
   
   boolean isRemote() {
-    return (remoteSubgraphID != -1);
+    return (subgraphID == -1);
   }
   
   List<Edge> outEdges() {

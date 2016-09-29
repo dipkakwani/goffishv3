@@ -36,6 +36,7 @@ public class VertexCount {
     VrtxCnt(long subgraphID, 
 	      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer) {
 	    super(subgraphID,  peer);
+	    System.out.println("Application constructor called");
 	  }
 
     void compute(List<Text> messages) {
@@ -45,6 +46,7 @@ public class VertexCount {
           if (!v.isRemote()) {
             count++;
           }
+          System.out.println("Number of local vertices = "+count);
         }
         try{
           Text message=new Text(new Long(count).toString());
@@ -61,6 +63,7 @@ public class VertexCount {
           String msgString = msg.toString();
           totalVertices+=Long.parseLong(msgString);
         }
+        System.out.println("Total vertices = "+totalVertices);
       try {
           peer.write(new LongWritable(getSubgraphID()), new LongWritable(totalVertices));
 	} catch (IOException e) {

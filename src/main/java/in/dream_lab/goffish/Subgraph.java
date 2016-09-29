@@ -33,22 +33,25 @@ public abstract class Subgraph {
   private List<Vertex> _vertices;
   private Map<Long, Vertex> _verticesID;
   private List<Vertex> _localVertices;
+  private List<Vertex> _remoteVertices;
   private List<Edge> _edges;
   private int partitionID;
   private boolean voteToHalt;
   BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer;
   
-  Subgraph(long subgraphID, 
-      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer2) {
+  Subgraph(long subgraphID,
+      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer) {
     this.subgraphID = subgraphID;
-    this.partitionID = peer2.getPeerIndex();
-    this.peer = peer2;
+    this.partitionID = peer.getPeerIndex();
+    this.peer = peer;
     _vertices = new ArrayList<Vertex>();
     _localVertices = new ArrayList<Vertex>();
+    _remoteVertices = new ArrayList<Vertex>();
     _verticesID = new HashMap<Long, Vertex>();
     _edges = new ArrayList<Edge>();
+    voteToHalt = false;
   }
-  
+
   void addVertex(Vertex v) {
     _vertices.add(v);
     _verticesID.put(v.getVertexID(), v);
@@ -58,29 +61,47 @@ public abstract class Subgraph {
     return _verticesID.get(vertexID);
   }
   
+  void addLocalVertex(Vertex v) {
+    _localVertices.add(v);
+    _verticesID.put(v.getVertexID(), v);
+  }
+  
+  void addRemoteVertex(Vertex v) {
+    _remoteVertices.add(v);
+    _verticesID.put(v.getVertexID(), v);
+  }
+  
   void addEdge(Edge e) {
     _edges.add(e);
   }
-  
+
   long getSubgraphID() {
     return subgraphID;
   }
-  
+
+  long vertexCount() {
+    return _vertices.size();
+  }
+
   void voteToHalt() {
     voteToHalt = true;
   }
-  
+
   boolean hasVotedToHalt() {
     return voteToHalt;
   }
-  
+
   List<Vertex> getVertices() {
     return _vertices;
   }
-  
+
   long getSuperStep() {
     return peer.getSuperstepCount();
   }
-  
+
+  int getPartitionID() {
+    return partitionID;
+  }
+
   abstract void compute(List<Text> messages);
 }
