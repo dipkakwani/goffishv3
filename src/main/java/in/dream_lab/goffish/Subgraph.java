@@ -29,6 +29,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
 public abstract class Subgraph {
+  private static final long INITIALISATION_SUPERSTEPS = 3;
   long subgraphID;
   private List<Vertex> _vertices;
   private Map<Long, Vertex> _verticesID;
@@ -82,6 +83,10 @@ public abstract class Subgraph {
   long vertexCount() {
     return _vertices.size();
   }
+  
+  long localVertexCount() {
+    return _localVertices.size();
+  }
 
   void voteToHalt() {
     voteToHalt = true;
@@ -94,9 +99,13 @@ public abstract class Subgraph {
   List<Vertex> getVertices() {
     return _vertices;
   }
+  
+  List<Vertex> getLocalVertices() {
+    return _localVertices;
+  }
 
   long getSuperStep() {
-    return peer.getSuperstepCount();
+    return peer.getSuperstepCount()-INITIALISATION_SUPERSTEPS;
   }
 
   int getPartitionID() {

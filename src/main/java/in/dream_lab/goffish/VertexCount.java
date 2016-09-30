@@ -42,12 +42,10 @@ public class VertexCount {
     void compute(List<Text> messages) {
       if (getSuperStep() == 0) {
         long count = 0;
-        for (Vertex v : getVertices()) {
-          if (!v.isRemote()) {
-            count++;
-          }
-          System.out.println("Number of local vertices = "+count);
+        for (Vertex v : getLocalVertices()) {
+          count++;
         }
+        System.out.println("Number of local vertices = "+count);
         try{
           Text message=new Text(new Long(count).toString());
           for (String peers:peer.getAllPeerNames()){

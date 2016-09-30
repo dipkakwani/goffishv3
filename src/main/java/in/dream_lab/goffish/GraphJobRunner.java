@@ -96,9 +96,9 @@ public final class GraphJobRunner
     KeyValuePair<LongWritable, Text> pair;
     long numPeers = peer.getNumPeers();
     while ((pair = peer.readNext()) != null) {
-      long sourceID = pair.getKey().get();
+      //long sourceID = pair.getKey().get();
       String value[] = pair.getValue().toString().split("\t");
-      // long sourceID = Long.parseLong(value[0]);
+      long sourceID = Long.parseLong(value[0]);
       String edgeList[] = value[1].split(" ");
       int targetSourcePeer = (int) (sourceID % numPeers);
       for (String dest : edgeList) {
@@ -114,7 +114,7 @@ public final class GraphJobRunner
         if (sink == null) {
           sink = new Vertex(sinkID, targetSinkPeer);
           vertexMap.put(sinkID, sink);
-          verticesList.add(source);
+          verticesList.add(sink);
         }
         Edge e = new Edge(source, sink);
         source.addEdge(e);
@@ -140,6 +140,11 @@ public final class GraphJobRunner
         vertexMap.put(v.getVertexID(), v);
       }
     }
+    for (Vertex v : _vertices) {
+      System.out.println(v.getVertexID());
+    }
+    
+    System.out.println(_vertices.size()+"=size="+vertexMap.size());
 
     // End of first superstep.
     peer.sync();
@@ -219,14 +224,15 @@ public final class GraphJobRunner
   void formSubgraphs(List<Vertex> vertices) {
     long subgraphCount = 0;
     Set<Long> visited = new HashSet<Long>();
-    
+
     for (Vertex v : vertices) {
       if (!visited.contains(v.getVertexID())) {
-        long subgraphID = subgraphCount++ | (((long)partition.getPartitionID()) << 32);
+        long subgraphID = subgraphCount++ | (((long) partition.getPartitionID()) << 32);
         Subgraph subgraph = new VertexCount.VrtxCnt(subgraphID, peer);
-        System.out.println(subgraph.getSubgraphID());
-        partition.addSubgraph(subgraph);
         dfs(v, visited, subgraph);
+        partition.addSubgraph(subgraph);
+        System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
+            + subgraph.vertexCount() + "Vertices");
       }
     }
   }
@@ -240,7 +246,6 @@ public final class GraphJobRunner
       subgraph.addRemoteVertex(v);
     }
     subgraph.addVertex(v);
-    System.out.println("Adding Vertex" + subgraph.vertexCount());
     visited.add(v.getVertexID());
     for (Edge e : v.outEdges()) {
       subgraph.addEdge(e);
@@ -260,7 +265,7 @@ public final class GraphJobRunner
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
     executor.setMaximumPoolSize(64);*/
-    System.out.println("BSP method");
+    System.out.println("BSP method at superstep "+peer.getSuperstepCount());
     boolean allVotedToHalt = false;
     while (!allVotedToHalt) {
       allVotedToHalt = true;
@@ -270,10 +275,13 @@ public final class GraphJobRunner
         messages.add(msg);
       }
 
-      System.out.println("Getting all subgraphs in partition");
       for (Subgraph subgraph : partition.getSubgraphs()) {
-        System.out.println("calling compute"+subgraph.vertexCount());
-        if (!subgraph.hasVotedToHalt()) {
+        System.out.println("Calling compute "+subgraph.localVertexCount());
+        /*
+         * TODO : Clean up the code to call subgraphs that receive
+         * message even when halted
+         * */
+        if (!subgraph.hasVotedToHalt() || messages.size()>0) {
           allVotedToHalt = false;
           subgraph.compute(messages);
         }
