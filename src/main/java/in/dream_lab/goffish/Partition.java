@@ -22,31 +22,33 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Partition {
+import org.apache.hadoop.io.Writable;
+
+public class Partition<S extends Writable, V extends Writable, E extends Writable, M extends Writable> {
   private int partitionID;
-  private List<Subgraph> _subgraphs;
-  private Map<Long, Subgraph> _subgraphMap;
+  private List<Subgraph<S, V, E, M>> _subgraphs;
+  private Map<Long, Subgraph<S, V, E, M>> _subgraphMap;
   
   Partition(int ID) {
     partitionID = ID;
-    _subgraphs = new ArrayList<Subgraph>();
-    _subgraphMap = new HashMap<Long, Subgraph>();
+    _subgraphs = new ArrayList<Subgraph<S, V, E, M>>();
+    _subgraphMap = new HashMap<Long, Subgraph<S, V, E, M>>();
   }
   
   int getPartitionID() {
     return partitionID;
   }
   
-  void addSubgraph(Subgraph subgraph) {
+  void addSubgraph(Subgraph<S, V, E, M> subgraph) {
     _subgraphs.add(subgraph);
     _subgraphMap.put(subgraph.getSubgraphID(), subgraph);
   }
   
-  List<Subgraph> getSubgraphs() {
+  List<Subgraph<S, V, E, M>> getSubgraphs() {
     return _subgraphs;
   }
   
-  Subgraph getSubgraph(long subgraphID) {
+  Subgraph<S, V, E, M> getSubgraph(long subgraphID) {
     return _subgraphMap.get(subgraphID);
   }
 }

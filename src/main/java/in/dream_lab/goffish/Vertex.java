@@ -34,6 +34,14 @@ public class Vertex {
     remoteSubgraphID = -1;
   }
   
+  Vertex(long ID) {
+    vertexID = ID;
+    this.partitionID = -1;
+    _adjList = new ArrayList<Edge>();
+    remoteSubgraphID = -1;
+  }
+  
+  
   void addEdge(Vertex destination) {
     Edge e = new Edge(this, destination);
     _adjList.add(e);

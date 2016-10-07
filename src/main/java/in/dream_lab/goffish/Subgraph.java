@@ -28,7 +28,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-public abstract class Subgraph {
+/* FIXME: Make it actually generic. */
+public abstract class Subgraph <S extends Writable, V extends Writable, E extends Writable, M extends Writable> implements SubgraphInterface<S, V, E, M>{
   private static final long INITIALISATION_SUPERSTEPS = 3;
   long subgraphID;
   private List<Vertex> _vertices;
@@ -58,7 +59,7 @@ public abstract class Subgraph {
     _verticesID.put(v.getVertexID(), v);
   }
   
-  Vertex getVertexByID(long vertexID) {
+  public Vertex getVertexByID(long vertexID) {
     return _verticesID.get(vertexID);
   }
   
@@ -76,41 +77,41 @@ public abstract class Subgraph {
     _edges.add(e);
   }
 
-  long getSubgraphID() {
+  public long getSubgraphID() {
     return subgraphID;
   }
 
-  long vertexCount() {
+  public long vertexCount() {
     return _vertices.size();
   }
   
-  long localVertexCount() {
+  public long localVertexCount() {
     return _localVertices.size();
   }
 
-  void voteToHalt() {
+  public void voteToHalt() {
     voteToHalt = true;
   }
 
-  boolean hasVotedToHalt() {
+  public boolean hasVotedToHalt() {
     return voteToHalt;
   }
 
-  List<Vertex> getVertices() {
+  public List<Vertex> getVertices() {
     return _vertices;
   }
   
-  List<Vertex> getLocalVertices() {
+  public List<Vertex> getLocalVertices() {
     return _localVertices;
   }
 
-  long getSuperStep() {
+  public long getSuperStep() {
     return peer.getSuperstepCount()-INITIALISATION_SUPERSTEPS;
   }
 
-  int getPartitionID() {
+  public int getPartitionID() {
     return partitionID;
   }
 
-  abstract void compute(List<Text> messages);
+  //public abstract void compute(List<Text> messages);
 }

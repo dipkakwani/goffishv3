@@ -39,6 +39,7 @@ public class VertexCount {
 	    System.out.println("Application constructor called");
 	  }
 
+    @Override
     void compute(List<Text> messages) {
       if (getSuperStep() == 0) {
         long count = 0;
