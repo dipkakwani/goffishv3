@@ -9,14 +9,17 @@ import org.apache.hadoop.io.Writable;
  * @param <V> Vertex value object type
  * @param <E> Edge value object type
  * */
-public interface VertexInterface<V extends Writable, E extends Writable> {
-  long getVertexID();
+public interface IVertex<V extends Writable, E extends Writable, I extends Writable, J extends Writable> {
+  I getVertexID();
   
   boolean isRemote();
   
-  Collection<Edge<V, E>> outEdges();
+  Collection<IEdge<E, I, J>> outEdges();
   
-  int getPartitionID();
+  //K getSubgraphID(); Seperate interface
+  // TODO: Add bivertex.
   
-  long getSubgraphID();
+  V getValue();
+  
+  void setValue(V value);
 }

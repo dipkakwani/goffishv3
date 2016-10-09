@@ -70,11 +70,12 @@ import org.apache.hama.util.WritableUtils;
  * @param <E> the value type of an edge.
  * @param <M> the value type of a vertex.
  */
-public final class GraphJobRunner
-    extends BSP<LongWritable, Text, LongWritable, LongWritable, Text> {
+//@SuppressWarnings("rawtypes")
+public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable>
+    extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage<S, V, E, M>> {
 
-  Partition partition;
-  BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer;
+  Partition<S, V, E, M> partition;
+  BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage<S, V, E, M>> peer;
   
   int getPartitionID(Vertex v){
     return (int) v.getVertexID() % peer.getNumPeers();
@@ -86,10 +87,12 @@ public final class GraphJobRunner
   
   @Override
   public final void setup(
-      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage<S, V, E, M>> peer)
       throws IOException, SyncException, InterruptedException {
 
     setupfields(peer);
+    /*TODO: Read input reader class type from Hama conf. */
+    EdgeListReader<LongWritable, Text, S, V, E, M> reader = new EdgeListReader<LongWritable, Text, S, V, E, M>(peer, partition);
     /*FIXME: Replace this with call to EdgeListReader -- getSubgraphs. */
     Map<Long, Vertex> vertexMap = new HashMap<Long, Vertex>();
     List<Vertex> verticesList = new ArrayList<Vertex>();

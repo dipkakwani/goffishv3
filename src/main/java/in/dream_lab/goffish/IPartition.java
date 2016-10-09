@@ -17,31 +17,23 @@
  */
 package in.dream_lab.goffish;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.hadoop.io.Writable;
 
-public class Edge<V extends Writable, E extends Writable> {
-  private Vertex<V, E> _source;
-  private Vertex<V, E> _sink;
-  private E _value;
+public interface IPartition<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable>{
   
-  Edge(Vertex<V, E> u, Vertex<V, E> v) {
-    _source = u;
-    _sink = v;
-  }
+  int getPartitionID();
   
-  Vertex<V, E> getSource() {
-    return _source;
-  }
+  void addSubgraph(ISubgraph<S, V, E, I, J, K> subgraph);
   
-  Vertex<V, E> getSink() {
-    return _sink;
-  }
+  void removeSubgraph(K subgraphID);
   
-  public E getValue() {
-    return _value;
-  }
+  //Return in descending order for vertices.
+  Iterable<ISubgraph<S, V, E, I, J, K>> getSubgraphs();
   
-  public void setValue(E val) {
-    _value = val;
-  }
+  ISubgraph<S, V, E, I, J, K> getSubgraph(K subgraphID);
 }

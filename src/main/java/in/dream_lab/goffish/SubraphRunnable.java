@@ -29,7 +29,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
 /* FIXME: Make it actually generic. */
-public abstract class Subgraph <S extends Writable, V extends Writable, E extends Writable, M extends Writable> implements SubgraphInterface<S, V, E, M>{
+public abstract class SubgraphRunnable <S extends Writable, V extends Writable, E extends Writable, M extends Writable> implements SubgraphInterface<S, V, E, M>{
   private static final long INITIALISATION_SUPERSTEPS = 3;
   long subgraphID;
   private List<Vertex<V, E>> _vertices;

@@ -13,7 +13,7 @@ import org.apache.hadoop.io.Writable;
  * */
 public interface SubgraphInterface<S extends Writable, V extends Writable, E extends Writable, M extends Writable> {
     
-  Vertex getVertexByID(long vertexID);
+  Vertex<V, E> getVertexByID(long vertexID);
 
   long getSubgraphID();
 
@@ -25,13 +25,23 @@ public interface SubgraphInterface<S extends Writable, V extends Writable, E ext
 
   boolean hasVotedToHalt();
 
-  List<Vertex> getVertices();
+  List<Vertex<V, E>> getVertices();
   
-  List<Vertex> getLocalVertices();
+  List<Vertex<V, E>> getLocalVertices();
 
   long getSuperStep();
 
   int getPartitionID();
 
-  public void compute(List<Text> messages);
+  void compute(List<M> messages);
+  
+  void sendMessage(long subgraphID, M message);
+  
+  void sendToAll(M message);
+  
+  void sendToNeighbors(M message);
+  
+  void setValue(S value);
+  
+  S getValue();
 }

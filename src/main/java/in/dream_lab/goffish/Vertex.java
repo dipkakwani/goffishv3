@@ -18,10 +18,13 @@
 package in.dream_lab.goffish;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class Vertex {
-  private List<Edge> _adjList;
+import org.apache.hadoop.io.Writable;
+
+public class Vertex<V extends Writable, E extends Writable> implements VertexInterface<V, E> {
+  private List<Edge<V, E>> _adjList;
   private long vertexID;
   private long subgraphID;
   private long remoteSubgraphID;
@@ -30,32 +33,32 @@ public class Vertex {
   Vertex(long ID, int partitionID) {
     vertexID = ID;
     this.partitionID = partitionID;
-    _adjList = new ArrayList<Edge>();
+    _adjList = new ArrayList<Edge<V, E>>();
     remoteSubgraphID = -1;
   }
   
   Vertex(long ID) {
     vertexID = ID;
     this.partitionID = -1;
-    _adjList = new ArrayList<Edge>();
+    _adjList = new ArrayList<Edge<V, E>>();
     remoteSubgraphID = -1;
   }
   
   
-  void addEdge(Vertex destination) {
-    Edge e = new Edge(this, destination);
+  void addEdge(Vertex<V, E> destination) {
+    Edge<V, E> e = new Edge<V, E>(this, destination);
     _adjList.add(e);
   }
   
-  void addEdge(Edge e) {
+  void addEdge(Edge<V, E> e) {
     _adjList.add(e);
   }
   
-  long getVertexID() {
+  public long getVertexID() {
     return vertexID;
   }
   
-  void setSubgraphID(long ID) {
+  public void setSubgraphID(long ID) {
     subgraphID = ID;
   }
   
@@ -63,19 +66,19 @@ public class Vertex {
     remoteSubgraphID = ID;
   }
   
-  boolean isRemote() {
+  public boolean isRemote() {
     return (subgraphID == -1);
   }
   
-  List<Edge> outEdges() {
+  public Collection<Edge<V, E>> outEdges() {
     return _adjList;
   }
   
-  int getPartitionID() {
+  public int getPartitionID() {
     return partitionID;
   }
   
-  long getSubgraphID() {
+  public long getSubgraphID() {
     return subgraphID;
   }
 }
