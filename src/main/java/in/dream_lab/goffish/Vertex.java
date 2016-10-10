@@ -23,62 +23,42 @@ import java.util.List;
 
 import org.apache.hadoop.io.Writable;
 
-public class Vertex<V extends Writable, E extends Writable> implements VertexInterface<V, E> {
-  private List<Edge<V, E>> _adjList;
-  private long vertexID;
-  private long subgraphID;
-  private long remoteSubgraphID;
-  private int partitionID;
+public class Vertex<V extends Writable, E extends Writable, I extends Writable, J extends Writable> implements IVertex<V, E, I, J> {
+  private List<IEdge<E, J>> _adjList;
+  private I vertexID;
+  private V _value;
   
-  Vertex(long ID, int partitionID) {
+  Vertex(I ID) {
     vertexID = ID;
-    this.partitionID = partitionID;
-    _adjList = new ArrayList<Edge<V, E>>();
-    remoteSubgraphID = -1;
+    _adjList = new ArrayList<IEdge<E, J>>();
   }
   
-  Vertex(long ID) {
-    vertexID = ID;
-    this.partitionID = -1;
-    _adjList = new ArrayList<Edge<V, E>>();
-    remoteSubgraphID = -1;
+  void addEdge(IEdge<E, J> edge) {
+    _adjList.add(edge);
   }
   
-  
-  void addEdge(Vertex<V, E> destination) {
-    Edge<V, E> e = new Edge<V, E>(this, destination);
-    _adjList.add(e);
-  }
-  
-  void addEdge(Edge<V, E> e) {
-    _adjList.add(e);
-  }
-  
-  public long getVertexID() {
+  @Override
+  public I getVertexID() {
     return vertexID;
   }
   
-  public void setSubgraphID(long ID) {
-    subgraphID = ID;
-  }
-  
-  void setRemoteSubgraphID(long ID) {
-    remoteSubgraphID = ID;
-  }
-  
+  @Override
   public boolean isRemote() {
-    return (subgraphID == -1);
+    return false;
   }
   
-  public Collection<Edge<V, E>> outEdges() {
+  @Override
+  public Collection<IEdge<E, J>> outEdges() {
     return _adjList;
   }
-  
-  public int getPartitionID() {
-    return partitionID;
+
+  @Override
+  public V getValue() {
+    return _value;
   }
-  
-  public long getSubgraphID() {
-    return subgraphID;
+
+  @Override
+  public void setValue(V value) {
+    _value = value;
   }
 }

@@ -19,29 +19,26 @@ package in.dream_lab.goffish;
 
 import org.apache.hadoop.io.Writable;
 
-public class Edge<V extends Writable, E extends Writable> {
-  private Vertex<V, E> _source;
-  private Vertex<V, E> _sink;
+public class Edge<E extends Writable, J extends Writable> implements IEdge<E, J> {
   private E _value;
+  private J edgeID;
   
-  Edge(Vertex<V, E> u, Vertex<V, E> v) {
-    _source = u;
-    _sink = v;
+  Edge(J id) {
+    edgeID = id;
   }
   
-  Vertex<V, E> getSource() {
-    return _source;
-  }
-  
-  Vertex<V, E> getSink() {
-    return _sink;
-  }
-  
+  @Override
   public E getValue() {
     return _value;
   }
   
+  @Override
   public void setValue(E val) {
     _value = val;
+  }
+  
+  @Override
+  public J getEdgeID() {
+    return edgeID;
   }
 }

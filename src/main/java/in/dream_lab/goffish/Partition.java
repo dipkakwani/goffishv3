@@ -24,31 +24,40 @@ import java.util.Map;
 
 import org.apache.hadoop.io.Writable;
 
-public class Partition<S extends Writable, V extends Writable, E extends Writable, M extends Writable> {
+public class Partition<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements IPartition<S, V, E, I, J, K> {
   private int partitionID;
-  private List<Subgraph<S, V, E, M>> _subgraphs;
-  private Map<Long, Subgraph<S, V, E, M>> _subgraphMap;
+  private List<ISubgraph<S, V, E, I, J, K>> _subgraphs;
+  private Map<K, ISubgraph<S, V, E, I, J, K>> _subgraphMap;
   
   Partition(int ID) {
     partitionID = ID;
-    _subgraphs = new ArrayList<Subgraph<S, V, E, M>>();
-    _subgraphMap = new HashMap<Long, Subgraph<S, V, E, M>>();
+    _subgraphs = new ArrayList<ISubgraph<S, V, E, I, J, K>>();
+    _subgraphMap = new HashMap<K, ISubgraph<S, V, E, I, J, K>>();
   }
   
-  int getPartitionID() {
+  @Override
+  public int getPartitionID() {
     return partitionID;
   }
   
-  void addSubgraph(Subgraph<S, V, E, M> subgraph) {
+  public void addSubgraph(ISubgraph<S, V, E, I, J, K> subgraph) {
     _subgraphs.add(subgraph);
     _subgraphMap.put(subgraph.getSubgraphID(), subgraph);
   }
   
-  List<Subgraph<S, V, E, M>> getSubgraphs() {
+  public List<ISubgraph<S, V, E, I, J, K>> getSubgraphs() {
     return _subgraphs;
   }
   
-  Subgraph<S, V, E, M> getSubgraph(long subgraphID) {
+
+  @Override
+  public void removeSubgraph(K subgraphID) {
+    _subgraphs.remove(_subgraphMap.get(subgraphID));
+    _subgraphMap.remove(subgraphID);
+  }
+
+  @Override
+  public ISubgraph<S, V, E, I, J, K> getSubgraph(K subgraphID) {
     return _subgraphMap.get(subgraphID);
   }
 }

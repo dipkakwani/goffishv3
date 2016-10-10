@@ -28,96 +28,78 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-/* FIXME: Make it actually generic. */
-public abstract class Subgraph <S extends Writable, V extends Writable, E extends Writable, M extends Writable> implements SubgraphInterface<S, V, E, M>{
+public abstract class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
   private static final long INITIALISATION_SUPERSTEPS = 3;
-  long subgraphID;
-  private List<Vertex<V, E>> _vertices;
-  private Map<Long, Vertex<V, E>> _verticesID;
-  private List<Vertex<V, E>> _localVertices;
-  private List<Vertex<V, E>> _remoteVertices;
-  private List<Edge<V, E>> _edges;
-  private int partitionID;
-  private boolean voteToHalt;
-  BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer;
+  K subgraphID;
+  private List<IVertex<V, E, I, J>> _vertices;
+  private Map<I, IVertex<V, E, I, J>> _verticesID;
+  //private List<IVertex<V, E, I, J>> _localVertices;
+  private List<IVertex<V, E, I, J>> _remoteVertices;
+  private List<IEdge<E, J>> _edges; 
+  //BSPPeer<Writable, Writable, Writable, Writable, Text> peer;
   S _value;
   
-  Subgraph(long subgraphID,
-      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer) {
+  Subgraph(K subgraphID) {
     this.subgraphID = subgraphID;
-    this.partitionID = peer.getPeerIndex();
-    this.peer = peer;
-    _vertices = new ArrayList<Vertex<V, E>>();
-    _localVertices = new ArrayList<Vertex<V, E>>();
-    _remoteVertices = new ArrayList<Vertex<V, E>>();
-    _verticesID = new HashMap<Long, Vertex<V, E>>();
-    _edges = new ArrayList<Edge<V, E>>();
-    voteToHalt = false;
+    _vertices = new ArrayList<IVertex<V, E, I, J>>();
+    //_localVertices = new ArrayList<IVertex<V, E, I, J>>();
+    _remoteVertices = new ArrayList<IVertex<V, E, I, J>>();
+    _verticesID = new HashMap<I, IVertex<V, E, I, J>>();
+    _edges = new ArrayList<IEdge<E, J>>();
   }
 
-  void addVertex(Vertex<V, E> v) {
+  void addVertex(IVertex<V, E, I, J> v) {
     _vertices.add(v);
+    if (v.isRemote())
+      _remoteVertices.add(v);
     _verticesID.put(v.getVertexID(), v);
   }
   
-  public Vertex<V, E> getVertexByID(long vertexID) {
+  @Override
+  public IVertex<V, E, I, J> getVertexByID(I vertexID) {
     return _verticesID.get(vertexID);
   }
   
-  void addLocalVertex(Vertex<V, E> v) {
-    _localVertices.add(v);
-    _verticesID.put(v.getVertexID(), v);
-  }
-  
-  void addRemoteVertex(Vertex<V, E> v) {
-    _remoteVertices.add(v);
-    _verticesID.put(v.getVertexID(), v);
-  }
-  
-  void addEdge(Edge<V, E> e) {
+  void addEdge(IEdge<E, J> e) {
     _edges.add(e);
   }
 
-  public long getSubgraphID() {
+  @Override
+  public K getSubgraphID() {
     return subgraphID;
   }
 
+  @Override
   public long vertexCount() {
     return _vertices.size();
   }
   
+  @Override
   public long localVertexCount() {
-    return _localVertices.size();
+    return _vertices.size() - _remoteVertices.size();
   }
 
-  public void voteToHalt() {
-    voteToHalt = true;
-  }
-
-  public boolean hasVotedToHalt() {
-    return voteToHalt;
-  }
-
-  public List<Vertex<V, E>> getVertices() {
+  @Override
+  public List<IVertex<V, E, I, J>> getVertices() {
     return _vertices;
   }
   
-  public List<Vertex<V, E>> getLocalVertices() {
-    return _localVertices;
-  }
-
-  public long getSuperStep() {
-    return peer.getSuperstepCount()-INITIALISATION_SUPERSTEPS;
-  }
-
-  public int getPartitionID() {
-    return partitionID;
+  /* Avoid using this function as it is inefficient. */
+  @Override
+  public List<IVertex<V, E, I, J>> getLocalVertices() {
+    List<IVertex<V, E, I, J>> localVertices = new ArrayList<IVertex<V, E, I, J>>();
+    for (IVertex<V, E, I, J> v : _vertices)
+      if (!v.isRemote())
+        localVertices.add(v);
+    return localVertices;
   }
   
+  @Override
   public void setValue(S value) {
     _value = value;
   }
   
+  @Override
   public S getValue() {
     return _value; 
   }

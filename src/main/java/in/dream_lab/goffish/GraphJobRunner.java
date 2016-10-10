@@ -71,11 +71,11 @@ import org.apache.hama.util.WritableUtils;
  * @param <M> the value type of a vertex.
  */
 //@SuppressWarnings("rawtypes")
-public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable>
-    extends BSP<Writable, Writable, Writable, Writable, GraphJobMessage<S, V, E, M>> {
+public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
+    extends BSP<Writable, Writable, Writable, Writable, IMessage<K>> {
 
   Partition<S, V, E, M> partition;
-  BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage<S, V, E, M>> peer;
+  BSPPeer<Writable, Writable, Writable, Writable, IMessage<K>> peer;
   
   int getPartitionID(Vertex v){
     return (int) v.getVertexID() % peer.getNumPeers();

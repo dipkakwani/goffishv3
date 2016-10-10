@@ -17,32 +17,42 @@
  */
 package in.dream_lab.goffish;
 
-import java.util.Collection;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.hadoop.io.Writable;
 
-/*TODO: Add IWCSubgraph and ISCSubgraph
- * @param <S> Subgraph value object type
- * @param <V> Vertex value object type
- * @param <E> Edge value object type
- * @param <M> Message object type
- * */
-public interface ISubgraph<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> {
+public class Message<K extends Writable> implements IMessage<K> {
+
+  @Override
+  public in.dream_lab.goffish.IMessage.MessageType getMessageType() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public K getSubgraphID() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public Writable getMessage() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    // TODO Auto-generated method stub
     
-  IVertex<V, E, I, J> getVertexByID(I vertexID);
+  }
 
-  K getSubgraphID();
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    // TODO Auto-generated method stub
+    
+  }
 
-  long vertexCount();
-  
-  long localVertexCount();
-
-  Collection<IVertex<V, E, I, J>> getVertices();
-  
-  Collection<IVertex<V, E, I, J>> getLocalVertices();
-  
-  Collection<IRemoteVertex<V, E, I, J, K>> getRemoteVertices();
-  
-  void setValue(S value);
-  
-  S getValue();
 }
