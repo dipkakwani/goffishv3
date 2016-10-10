@@ -29,7 +29,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-/* FIXME: Make it actually generic. */
+
 public interface ISubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> {
   
   ISubgraph<S, V, E, I, J, K> getSubgrpah();

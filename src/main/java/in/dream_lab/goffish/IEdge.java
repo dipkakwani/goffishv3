@@ -19,30 +19,13 @@ package in.dream_lab.goffish;
 
 import org.apache.hadoop.io.Writable;
 
-public interface IEdge<E extends Writable, J extends Writable>{
-  //private I _source;
-  //private I _sink; Seperate interace
-  private E _value;
-  private J _id;
+public interface IEdge<E extends Writable, I extends Writable, J extends Writable> {
   
-  Edge(Vertex<V, E> u, Vertex<V, E> v) {
-    _source = u;
-    _sink = v;
-  }
+  I getSource();
   
-  Vertex<V, E> getSource() {
-    return _source;
-  }
+  I getSink();
   
-  Vertex<V, E> getSink() {
-    return _sink;
-  }
+  public E getValue();
   
-  public E getValue() {
-    return _value;
-  }
-  
-  public void setValue(E val) {
-    _value = val;
-  }
+  public void setValue(E value);
 }
