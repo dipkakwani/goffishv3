@@ -14,7 +14,7 @@ public interface IVertex<V extends Writable, E extends Writable, I extends Writa
   
   boolean isRemote();
   
-  Collection<IEdge<E, I, J>> outEdges();
+  Collection<IEdge<E, J>> outEdges();
   
   //K getSubgraphID(); Seperate interface
   // TODO: Add bivertex.
