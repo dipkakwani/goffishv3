@@ -74,10 +74,11 @@ import org.apache.hama.util.WritableUtils;
 public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, IMessage<K>> {
 
-  Partition<S, V, E, M> partition;
+  Partition<S, V, E, I, J, K> partition;
   BSPPeer<Writable, Writable, Writable, Writable, IMessage<K>> peer;
   
-  int getPartitionID(Vertex v){
+  
+  int getPartitionID(IVertex<V, E, I, J> v){
     return (int) v.getVertexID() % peer.getNumPeers();
   }
   
@@ -87,7 +88,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   @Override
   public final void setup(
-      BSPPeer<Writable, Writable, Writable, Writable, GraphJobMessage<S, V, E, M>> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, IMessage<K>> peer)
       throws IOException, SyncException, InterruptedException {
 
     setupfields(peer);
