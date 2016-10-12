@@ -19,12 +19,14 @@ package in.dream_lab.goffish;
 
 import org.apache.hadoop.io.Writable;
 
-public class Edge<E extends Writable, J extends Writable> implements IEdge<E, J> {
+public class Edge<E extends Writable, I extends Writable, J extends Writable> implements IEdge<E, I, J> {
   private E _value;
   private J edgeID;
+  private I _sink;
   
-  Edge(J id) {
+  Edge(J id, I sinkID) {
     edgeID = id;
+    _sink = sinkID;
   }
   
   @Override
@@ -40,5 +42,10 @@ public class Edge<E extends Writable, J extends Writable> implements IEdge<E, J>
   @Override
   public J getEdgeID() {
     return edgeID;
+  }
+
+  @Override
+  public I getSink() {
+    return _sink;
   }
 }

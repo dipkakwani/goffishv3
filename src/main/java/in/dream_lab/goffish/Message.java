@@ -20,25 +20,44 @@ package in.dream_lab.goffish;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.List;
 
+import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.Writable;
 
 public class Message<K extends Writable> implements IMessage<K> {
+  private IMessage.MessageType messageType;
+  private K subgraphID;
+  private int partitionID;
+  private byte[] msg;
+  
+  
+  Message(IMessage.MessageType messageType, int partitionID, byte[] msg) {
+    this.messageType = messageType;
+    this.partitionID = partitionID;
+    this.msg = msg;
+  }
+  
+  Message(IMessage.MessageType messageType, K subgraphID, byte[] msg) {
+    this.messageType = messageType;
+    this.subgraphID = subgraphID;
+    this.msg = msg;
+  }
 
   @Override
   public in.dream_lab.goffish.IMessage.MessageType getMessageType() {
-    // TODO Auto-generated method stub
-    return null;
+    return messageType;
   }
 
   @Override
   public K getSubgraphID() {
-    // TODO Auto-generated method stub
-    return null;
+    return subgraphID;
   }
 
   @Override
   public Writable getMessage() {
+    ByteWritable[] message = new ByteWritable[](msg);
+    return (Writable)
     // TODO Auto-generated method stub
     return null;
   }

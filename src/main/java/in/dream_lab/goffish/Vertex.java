@@ -24,16 +24,16 @@ import java.util.List;
 import org.apache.hadoop.io.Writable;
 
 public class Vertex<V extends Writable, E extends Writable, I extends Writable, J extends Writable> implements IVertex<V, E, I, J> {
-  private List<IEdge<E, J>> _adjList;
+  private List<IEdge<E, I, J>> _adjList;
   private I vertexID;
   private V _value;
   
   Vertex(I ID) {
     vertexID = ID;
-    _adjList = new ArrayList<IEdge<E, J>>();
+    _adjList = new ArrayList<IEdge<E, I, J>>();
   }
   
-  void addEdge(IEdge<E, J> edge) {
+  void addEdge(IEdge<E, I, J> edge) {
     _adjList.add(edge);
   }
   
@@ -48,7 +48,7 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   }
   
   @Override
-  public Collection<IEdge<E, J>> outEdges() {
+  public Collection<IEdge<E, I, J>> outEdges() {
     return _adjList;
   }
 

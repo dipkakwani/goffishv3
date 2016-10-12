@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -46,50 +47,64 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition;
   
   List<Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs() {
+    Map<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> partitionMap = new HashMap<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>>();
     Map<LongWritable, Vertex<V, E, LongWritable, LongWritable>> vertexMap = new HashMap<LongWritable, Vertex<V, E, LongWritable, LongWritable>>();
     List<Vertex<V, E, LongWritable, LongWritable>> verticesList = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
     
     KeyValuePair<Writable, Writable> pair;
     long numPeers = peer.getNumPeers();
     while ((pair = peer.readNext()) != null) {
-      //long sourceID = pair.getKey().get();
+      //NOTE: Confirm that data starts from value and not from key.
       String value[] = pair.getValue().toString().split("\\s+");
       LongWritable sourceID = new LongWritable(Long.parseLong(value[0]));
-      LongWritable partitionID = new LongWritable(Long.parseLong(value[1]));
+      IntWritable partitionID = new IntWritable(Integer.parseInt(value[1]));
       LongWritable startEdgeID = new LongWritable(Long.parseLong(value[2]));
+      List<Vertex<V, E, LongWritable, LongWritable>> partitionVertices = partitionMap.get(partitionID);
+      if (partitionVertices == null) {
+        partitionVertices = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
+      }
+      Vertex<V, E, LongWritable, LongWritable> source = vertexMap.get(sourceID);
+      if (source == null) {
+        source = new Vertex<V, E, LongWritable, LongWritable>(sourceID);
+        vertexMap.put(sourceID, source);
+        verticesList.add(source);
+      }
+      partitionVertices.add(source);
       for (int i = 3; i < value.length; i++) {
         LongWritable sinkID = new LongWritable(Long.parseLong(value[i]));
-        Vertex<V, E, LongWritable, LongWritable> source = vertexMap.get(sourceID);
-        Vertex<V, E, LongWritable, LongWritable> sink = vertexMap.get(sinkID);
-        if (source == null) {
-          source = new Vertex<V, E, LongWritable, LongWritable>(sourceID);
-          vertexMap.put(sourceID, source);
-          verticesList.add(source);
-        }
+        Vertex<V, E, LongWritable, LongWritable> sink = vertexMap.get(sinkID);   
         if (sink == null) {
           sink = new Vertex<V, E, LongWritable, LongWritable>(sinkID);
           vertexMap.put(sinkID, sink);
           verticesList.add(sink);
         }
-        Edge<E, LongWritable> e = new Edge<E, LongWritable>(startEdgeID);
+        Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(startEdgeID, sinkID);
         startEdgeID.set(startEdgeID.get() + 1);
         source.addEdge(e);
       }
     }
     // TODO: Incomplete.
     List<IVertex<V, E, LongWritable, LongWritable>> _vertices = new ArrayList<IVertex<V, E, LongWritable, LongWritable>>(); // Final list of vertices.
-    vertexMap = new HashMap<Long, IVertex<V, E, LongWritable, LongWritable>>();
+    //vertexMap = new HashMap<Long, IVertex<V, E, LongWritable, LongWritable>>();
 
     // Send vertices to their respective partitions.
-    for (IVertex<V, E, LongWritable, LongWritable> v : verticesList) {
-      int targetPeer = getPartitionID(v);
-      if (targetPeer != peer.getPeerIndex()) {
-        GraphJobMessage<S, V, E, M> msg = new GraphJobMessage<S, V, E, M>(v);
+    for (Map.Entry<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> entry : partitionMap.entrySet()) {
+      
+      if (entry.getKey().get() != peer.getPeerIndex()) {
+        StringBuilder sb = new StringBuilder();
+        for (Vertex<V, E, LongWritable, LongWritable> v : entry.getValue()) {
+          sb.append(v.getVertexID());
+          for (IEdge<E, LongWritable, LongWritable> e : v.outEdges()) {
+            Edge<E, LongWritable, LongWritable> edge = (Edge<E, LongWritable, LongWritable>)e;
+            sb.append(' ').append(edge.getSink());
+          }
+        }
+        Message<LongWritable> msg = new Message<LongWritable>(IMessage.MessageType.VERTEX, entry.getKey().get(), String.valueOf(sb).getBytes());
         //Text msg = new Text(sb.toString());
-        peer.send(peer.getPeerName(targetPeer), msg);
+        peer.send(peer.getPeerName(entry.getKey().get()), msg);
       } else { // Belongs to this partition
-        _vertices.add(v);
-        vertexMap.put(v.getVertexID(), v);
+        _vertices.addAll(entry.getValue());
+        //vertexMap.put(v.getVertexID(), v);
       }
     }
     for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
@@ -101,12 +116,12 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     // End of first superstep.
     peer.sync();
     
-    Text msg;
+    IMessage<LongWritable> msg;
     while ((msg = peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
       String msgStringArr[] = msgString.split(",");
       long vertexID = Long.parseLong(msgStringArr[0]);
-      IVertex<V, E, LongWritable, LongWritable> v = new IVertex<V, E, LongWritable, LongWritable>(vertexID, getPartitionID(vertexID));
+      Vertex<V, E, LongWritable, LongWritable> v = new Vertex<V, E, LongWritable, LongWritable>(vertexID, getPartitionID(vertexID));
       _vertices.add(v);
       vertexMap.put(v.getVertexID(), v);
       for (int i = 1; i < msgStringArr.length; i++) {
