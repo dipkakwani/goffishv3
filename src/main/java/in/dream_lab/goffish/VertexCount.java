@@ -18,6 +18,7 @@
 package in.dream_lab.goffish;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.cli.ParseException;
@@ -30,48 +31,45 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 public class VertexCount {
-  public static class VrtxCnt extends Subgraph
-  {
-	  /*FIXME: Shouldn't be in user's logic. */
-    VrtxCnt(long subgraphID, 
-	      BSPPeer<LongWritable, Text, LongWritable, LongWritable, Text> peer) {
-	    super(subgraphID,  peer);
-	    System.out.println("Application constructor called");
-	  }
+  public static class VrtxCnt extends
+      SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
+    /* FIXME: Shouldn't be in user's logic. */
+    VrtxCnt(long subgraphID) {
+      System.out.println("Application constructor called");
+    }
 
     @Override
-    void compute(List<Text> messages) {
+    public void compute(Collection<LongWritable> messages) {
       if (getSuperStep() == 0) {
         long count = 0;
-        for (Vertex v : getLocalVertices()) {
+        for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : subgraph.getLocalVertices()) {
           count++;
         }
-        System.out.println("Number of local vertices = "+count);
-        try{
-          Text message=new Text(new Long(count).toString());
-          for (String peers:peer.getAllPeerNames()){
+        System.out.println("Number of local vertices = " + count);
+        try {
+          Text message = new Text(new Long(count).toString());
+          for (String peers : peer.getAllPeerNames()) {
             peer.send(peers, message);
           }
+        } catch (IOException e) {
         }
-        catch(IOException e)
-        {}
-      }
-      else {
-        long totalVertices=0;
-        for(Text msg:messages){
+      } else {
+        long totalVertices = 0;
+        for (Text msg : messages) {
           String msgString = msg.toString();
-          totalVertices+=Long.parseLong(msgString);
+          totalVertices += Long.parseLong(msgString);
         }
-        System.out.println("Total vertices = "+totalVertices);
-      try {
-          peer.write(new LongWritable(getSubgraphID()), new LongWritable(totalVertices));
-	} catch (IOException e) {
-	  // TODO Auto-generated catch block
-	  e.printStackTrace();
-	}
+        System.out.println("Total vertices = " + totalVertices);
+        try {
+          peer.write(new LongWritable(getSubgraphID()),
+              new LongWritable(totalVertices));
+        } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+      voteToHalt();
     }
-    voteToHalt();
-  }
   
   
   }

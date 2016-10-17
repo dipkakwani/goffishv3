@@ -23,9 +23,9 @@ public interface IEdge<E extends Writable, I extends Writable, J extends Writabl
   
   J getEdgeID();
   
-  I getSink();
+  I getSinkVertexID();
   
-  public E getValue();
+  E getValue();
   
-  public void setValue(E value);
+  void setValue(E value);
 }

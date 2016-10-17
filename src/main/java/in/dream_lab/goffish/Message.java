@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.Writable;
 
-public class Message<K extends Writable> implements IMessage<K> {
+public class Message<K extends Writable, M extends Writable> implements IMessage<K, M> {
   private IMessage.MessageType messageType;
   private K subgraphID;
   private int partitionID;
@@ -55,9 +55,7 @@ public class Message<K extends Writable> implements IMessage<K> {
   }
 
   @Override
-  public Writable getMessage() {
-    ByteWritable[] message = new ByteWritable[](msg);
-    return (Writable)
+  public M getMessage() {
     // TODO Auto-generated method stub
     return null;
   }

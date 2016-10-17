@@ -45,7 +45,7 @@ public class Edge<E extends Writable, I extends Writable, J extends Writable> im
   }
 
   @Override
-  public I getSink() {
+  public I getSinkVertexID() {
     return _sink;
   }
 }

@@ -18,6 +18,7 @@
 package in.dream_lab.goffish;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,30 +29,32 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-public abstract class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
+public class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
   private static final long INITIALISATION_SUPERSTEPS = 3;
   K subgraphID;
   private List<IVertex<V, E, I, J>> _vertices;
   private Map<I, IVertex<V, E, I, J>> _verticesID;
   //private List<IVertex<V, E, I, J>> _localVertices;
-  private List<IVertex<V, E, I, J>> _remoteVertices;
-  private List<IEdge<E, J>> _edges; 
+  private List<IRemoteVertex<V, E, I, J, K>> _remoteVertices;
+  private List<IEdge<E, I, J>> _edges; 
   //BSPPeer<Writable, Writable, Writable, Writable, Text> peer;
+  int partitionID;
   S _value;
   
-  Subgraph(K subgraphID) {
+  Subgraph(int partitionID, K subgraphID) {
+    this.partitionID = partitionID;
     this.subgraphID = subgraphID;
     _vertices = new ArrayList<IVertex<V, E, I, J>>();
     //_localVertices = new ArrayList<IVertex<V, E, I, J>>();
-    _remoteVertices = new ArrayList<IVertex<V, E, I, J>>();
+    _remoteVertices = new ArrayList<IRemoteVertex<V, E, I, J, K>>();
     _verticesID = new HashMap<I, IVertex<V, E, I, J>>();
-    _edges = new ArrayList<IEdge<E, J>>();
+    _edges = new ArrayList<IEdge<E, I, J>>();
   }
 
   void addVertex(IVertex<V, E, I, J> v) {
     _vertices.add(v);
     if (v.isRemote())
-      _remoteVertices.add(v);
+      _remoteVertices.add((IRemoteVertex<V, E, I, J, K>)v);
     _verticesID.put(v.getVertexID(), v);
   }
   
@@ -60,7 +63,7 @@ public abstract class Subgraph <S extends Writable, V extends Writable, E extend
     return _verticesID.get(vertexID);
   }
   
-  void addEdge(IEdge<E, J> e) {
+  void addEdge(IEdge<E, I, J> e) {
     _edges.add(e);
   }
 
@@ -104,4 +107,9 @@ public abstract class Subgraph <S extends Writable, V extends Writable, E extend
     return _value; 
   }
   //public abstract void compute(List<Text> messages);
+
+  @Override
+  public List<IRemoteVertex<V, E, I, J, K>> getRemoteVertices() {
+    return _remoteVertices;
+  }
 }
