@@ -35,6 +35,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
 
@@ -48,8 +49,9 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   Map<LongWritable, Vertex<V, E, LongWritable, LongWritable>> vertexMap;
   BSPPeer<Writable, Writable, Writable, Writable, IMessage<LongWritable, LongWritable>> peer;
   Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition;
-  
-  List<Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs() {
+
+  List<ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs()
+      throws IOException, SyncException, InterruptedException {
     Map<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> partitionMap = new HashMap<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>>();
     Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
     List<Vertex<V, E, LongWritable, LongWritable>> verticesList = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
@@ -157,19 +159,16 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     formSubgraphs(partition, _vertices);
     
     /*
-     * TODO: Ask Remote vertices to send their subgraph IDs. Requires 2 supersteps
+     * Ask Remote vertices to send their subgraph IDs. Requires 2 supersteps
      * because the graph is directed
      */
     for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
       if (v instanceof RemoteVertex) {
         String s = v.getVertexID() + "," + peer.getPeerIndex();
         for (String peerName : peer.getAllPeerNames()) {
-          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(IMessage.MessageType.VERTEX, peer., new String("").getBytes());
+          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(IMessage.MessageType.QUERY, s.getBytes());
           peer.send(peerName, question);
         }
-        
-        msg = new Text(v.getVertexID() + "," + peer.getPeerIndex());
-        peer.send(peer.getPeerName(getPartitionID(v)), msg);
       }
     }
 
@@ -178,11 +177,13 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     while ((msg = peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
       String msgStringArr[] = msgString.split(",");
-      Long sinkID = Long.valueOf(msgStringArr[0]);
-      for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
-        if (sinkID == v.getVertexID()) {
-          peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),
-              new Text(v.getVertexID() + "," + v.getSubgraphID()));
+      LongWritable sinkID = new LongWritable(Long.valueOf(msgStringArr[0]));
+      for (ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph: partition.getSubgraphs()) {
+        IVertex v = subgraph.getVertexByID(sinkID);
+        if (v !=null) {
+          String reply = sinkID + "," + subgraph.getSubgraphID();
+          Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(IMessage.MessageType.CUSTOM_MESSAGE,reply.getBytes()); 
+          peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),subgraphIDReply);
         }
       }
     }
@@ -193,16 +194,17 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     while ((msg = peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
       String msgStringArr[] = msgString.split(",");
-      Long sinkID = Long.parseLong(msgStringArr[0]);
-      Long remoteSubgraphID = Long.parseLong(msgStringArr[1]);
-      for(IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
+      LongWritable sinkID = new LongWritable(Long.parseLong(msgStringArr[0]));
+      LongWritable remoteSubgraphID = new LongWritable(
+          Long.valueOf(msgStringArr[1]));
+      for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
         if (v.getVertexID() == sinkID) {
-          v.setRemoteSubgraphID(remoteSubgraphID);
+          ((RemoteVertex) v).setSubgraphID(remoteSubgraphID);
         }
       }
     }
 
-    
+    return partition.getSubgraphs();
   }
   
   /* Forms subgraphs by finding (weakly) connected components. */
@@ -214,6 +216,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       if (!visited.contains(v.getVertexID())) {
         LongWritable subgraphID = new LongWritable(subgraphCount++ | (((long) partition.getPartitionID()) << 32));
         Subgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph = new Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex(), subgraphID);
+        //BFS
         Queue<LongWritable> Q = new LinkedList<LongWritable>();
         Q.add(v.getVertexID());
         subgraph.addVertex(v);

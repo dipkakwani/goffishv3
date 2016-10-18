@@ -43,6 +43,11 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     this.subgraphID = subgraphID;
     this.msg = msg;
   }
+  
+  Message(IMessage.MessageType messageType,byte[] msg) {
+    this.messageType = messageType;
+    this.msg = msg;
+  }
 
   @Override
   public in.dream_lab.goffish.IMessage.MessageType getMessageType() {
