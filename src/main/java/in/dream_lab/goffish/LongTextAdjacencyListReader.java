@@ -152,9 +152,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         sink = new RemoteVertex<V, E, LongWritable, LongWritable, LongWritable>(sinkID);
         _vertices.add(sink);
       }
-    }
-    
-    Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition = new Partition<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex());
+    }    
 
     formSubgraphs(partition, _vertices);
     
