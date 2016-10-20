@@ -33,10 +33,9 @@ import org.apache.hama.bsp.TextOutputFormat;
 public class VertexCount {
   public static class VrtxCnt extends
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
-    /* FIXME: Shouldn't be in user's logic. */
-    VrtxCnt(int partitionID,LongWritable subgraphID) {
-      //super(partitionID,subgraphID);
-      System.out.println("Application constructor called");
+
+    public VrtxCnt() {
+      // TODO Auto-generated constructor stub
     }
 
     @Override

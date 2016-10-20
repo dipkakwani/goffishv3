@@ -62,8 +62,8 @@ public class GraphJob extends BSPJob {
   /**
    * Set the Subgraph class for the job.
    */
-  public void setSubgraphClass(
-      Class<? extends Subgraph<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable>> cls)
+  public void setSubgraphComputeClass(
+      Class<? extends SubgraphCompute<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable>> cls)
       throws IllegalStateException {
     conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
     setInputKeyClass(cls);

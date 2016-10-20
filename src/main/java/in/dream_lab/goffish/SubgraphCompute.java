@@ -40,6 +40,14 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
     voteToHalt = false;
   }
   
+  boolean hasVotedToHalt() {
+    return voteToHalt;
+  }
+  
+  void setSubgraph(ISubgraph<S, V, E, I, J, K> subgraph) {
+    this.subgraph = subgraph;
+  }
+  
   @Override
   public void sendMessage(K subgraphID, M message) {
     runner.sendMessage(subgraphID, message);

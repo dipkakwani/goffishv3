@@ -58,6 +58,7 @@ import org.apache.hama.commons.util.KeyValuePair;
 
 import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.Vertex;
+import in.dream_lab.goffish.VertexCount.VrtxCnt;
 
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
@@ -79,7 +80,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private HamaConfiguration conf;
   private Map<K, List<IMessage<K, M>>> _messages;
   private static Class<?> SUBGRAPH_CLASS;
-  //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
+  //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;  
   
   @Override
   public final void setup(
@@ -126,6 +127,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         .newCachedThreadPool();
     executor.setMaximumPoolSize(64);*/
     System.out.println("BSP method at superstep "+peer.getSuperstepCount());
+    
+    List<SubgraphCompute<S, V, E, M, I, J, K>> subgraphs=new ArrayList<SubgraphCompute<S, V, E, M, I, J, K>>();
+    for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
+      VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
+      subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
+      subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
+    }
     boolean allVotedToHalt = false;
     while (!allVotedToHalt) {
       allVotedToHalt = true;
@@ -136,9 +144,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
 
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
-      for (ISubgraph subgraph : subgraphs) {
-        System.out.println("Calling compute "+subgraph.localVertexCount());
-        Subgraph asdf = (Subgraph)subgraph;
+      for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
+        System.out.println("Calling compute "+subgraph.getSubgraph().localVertexCount());
         /*
          * TODO : Clean up the code to call subgraphs that receive
          * message even when halted
