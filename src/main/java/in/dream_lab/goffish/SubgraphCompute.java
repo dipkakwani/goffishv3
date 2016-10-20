@@ -23,6 +23,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   ISubgraph<S, V, E, I, J, K> subgraph;
   long superStepCount;
   boolean voteToHalt;
+  GraphJobRunner<S, V, E, M, I, J, K> runner = new GraphJobRunner<S, V, E, M, I, J, K>();
   
   @Override
   public long getSuperStep() {
@@ -41,7 +42,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   
   @Override
   public void sendMessage(K subgraphID, M message) {
-    
+    runner.sendMessage(subgraphID, message);
   }
   
   @Override

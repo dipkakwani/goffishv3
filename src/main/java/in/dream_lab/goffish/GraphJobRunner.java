@@ -77,10 +77,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private Partition<S, V, E, I, J, K> partition;
   private BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
   private HamaConfiguration conf;
+  private Map<K, List<IMessage<K, M>>> _messages;
   private static Class<?> SUBGRAPH_CLASS;
-  public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
-  
-  List<ISubgraph<S, V, E, I, J, K>> subgraphs;
+  //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
   
   @Override
   public final void setup(
@@ -95,10 +94,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, LongTextAdjacencyListReader.class));
         */
-    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E>(peer);
-    // TODO: get subgraphs.
-    subgraphs = reader.getSubgraphs();
-    for (ISubgraph<S, V, E, I, J, K> subgraph: subgraphs) {
+    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer);
+    for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       partition.addSubgraph(subgraph);
     }
   }
@@ -108,11 +105,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer) {
     
     this.peer = peer;
-    partition = new Partition(peer.getPeerIndex());
+    partition = new Partition<S, V, E, I, J, K>(peer.getPeerIndex());
     this.conf = peer.getConfiguration();
-    subgraphClass = (Class<Subgraph<?, ?, ?, ?, ?, ?, ?>>) conf.getClass(
+    _messages = new HashMap<K, List<IMessage<K, M>>>();
+    /*subgraphClass = (Class<Subgraph<?, ?, ?, ?, ?, ?, ?>>) conf.getClass(
         "hama.subgraph.class", Subgraph.class);
     SUBGRAPH_CLASS = subgraphClass;
+    */
     
   }
 
@@ -159,5 +158,18 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer)
       throws IOException {
     
+  }
+  
+  void sendMessage(K subgraphID, M message) {
+    List<IMessage<K, M>> messages = _messages.get(subgraphID);
+    if (messages == null) {
+      messages = new ArrayList<IMessage<K, M>>();
+    }
+    IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, subgraphID, message.toString().getBytes());
+    messages.add(msg);
+  }
+  
+  int getPartitionID(K subgraphID) {
+    return 0;
   }
 }
