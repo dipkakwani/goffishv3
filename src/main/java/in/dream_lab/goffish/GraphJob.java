@@ -41,7 +41,7 @@ public class GraphJob extends BSPJob {
   
   public final static String VERTEX_CLASS_ATTR = "hama.subgraph.class";
   
-  public GraphJob(HamaConfiguration conf, Class<? extends Subgraph> exampleClass)
+  public GraphJob(HamaConfiguration conf, Class<? extends SubgraphCompute> exampleClass)
       throws IOException {
     super(conf); 
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);

@@ -80,6 +80,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private HamaConfiguration conf;
   private Map<K, List<IMessage<K, M>>> _messages;
   private List<IMessage<K, M>> _broadcastMessages;
+  private Map<K, Integer> subgraphPartitionMap;
   private static Class<?> SUBGRAPH_CLASS;
   //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;  
   
@@ -96,7 +97,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, LongTextAdjacencyListReader.class));
         */
-    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer);
+    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       partition.addSubgraph(subgraph);
     }
@@ -168,14 +169,19 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     
   }
   
-  //TODO: Support this operation.
   void sendMessage(K subgraphID, M message) {
-    List<IMessage<K, M>> messages = _messages.get(subgraphID);
-    if (messages == null) {
-      messages = new ArrayList<IMessage<K, M>>();
-    }
+    //List<IMessage<K, M>> messages = _messages.get(subgraphID);
+    //if (messages == null) {
+    //  messages = new ArrayList<IMessage<K, M>>();
+    //}
     IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, subgraphID, message.toString().getBytes());
-    messages.add(msg);
+    try {
+      peer.send(peer.getPeerName(subgraphPartitionMap.get(subgraphID)), msg);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    //messages.add(msg);
   }
  
   void sendToNeighbors(M message) {
@@ -184,7 +190,15 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   void sendToAll(M message) {
     IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, message.toString().getBytes());
-    _broadcastMessages.add(msg);
+    //_broadcastMessages.add(msg);
+    for (String peerName : peer.getAllPeerNames()) {
+      try {
+        peer.send(peerName, msg);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
   }
   
   int getPartitionID(K subgraphID) {

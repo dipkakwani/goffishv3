@@ -30,6 +30,8 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
+import in.dream_lab.goffish.IMessage.MessageType;
+
 public class VertexCount {
   public static class VrtxCnt extends
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
@@ -42,30 +44,27 @@ public class VertexCount {
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
         long count = 0;
-        for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : subgraph.getLocalVertices()) {
+        for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : subgraph
+            .getLocalVertices()) {
           count++;
         }
         System.out.println("Number of local vertices = " + count);
-        try {
-          Text message = new Text(new Long(count).toString());
-          for (String peers : peer.getAllPeerNames()) {
-            peer.send(peers, message);
-          }
-        } catch (IOException e) {
-        }
+
+        LongWritable message = new LongWritable(count);
+        sendToAll(message);
+
       } else {
         long totalVertices = 0;
-        for (Text msg : messages) {
-          String msgString = msg.toString();
-          totalVertices += Long.parseLong(msgString);
+        for (IMessage<LongWritable, LongWritable> msg : messages) {
+          LongWritable count= msg.getMessage();
+          totalVertices += count.get();
         }
         System.out.println("Total vertices = " + totalVertices);
         try {
-          peer.write(new LongWritable(getSubgraphID()),
-              new LongWritable(totalVertices));
-        } catch (IOException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
+          //Use OutputWriter
+        }
+        finally {
+          
         }
       }
       voteToHalt();

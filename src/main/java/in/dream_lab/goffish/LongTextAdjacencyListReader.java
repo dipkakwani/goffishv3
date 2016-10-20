@@ -39,6 +39,8 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
 
+import in.dream_lab.goffish.IMessage.MessageType;
+
 
 /* Reads graph in the adjacency list format:
  * VID PartitionID Sink1 Sink2 ...
@@ -48,7 +50,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   
   Map<LongWritable, Vertex<V, E, LongWritable, LongWritable>> vertexMap;
   BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
-
+  private Map<K, Integer> subgraphPartitionMap;
+  
   /*
    * Returns the list of subgraphs belonging to the current partition 
    */
@@ -178,6 +181,12 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     peer.sync();
 
     while ((msg = (IMessage<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+      if (msg.getMessageType() == IMessage.MessageType.SUBGRAPH) {
+        String msgString = msg.toString();
+        String msgStringArr[] = msgString.split(",");
+        subgraphPartitionMap.put((K)new LongWritable(Long.valueOf(msgStringArr[1])), Integer.valueOf(msgStringArr[0]));
+        continue;
+      }
       String msgString = msg.toString();
       String msgStringArr[] = msgString.split(",");
       LongWritable sinkID = new LongWritable(Long.valueOf(msgStringArr[0]));
@@ -211,10 +220,10 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   }
   
   /* Forms subgraphs by finding (weakly) connected components. */
-  void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, List<IVertex<V, E, LongWritable, LongWritable>> vertices) {
+  void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, List<IVertex<V, E, LongWritable, LongWritable>> vertices) throws IOException {
     long subgraphCount = 0;
-    Set<Long> visited = new HashSet<Long>();
-
+    Set<Long> visited = new HashSet<Long>();    
+    
     for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
       if (!visited.contains(v.getVertexID())) {
         LongWritable subgraphID = new LongWritable(subgraphCount++ | (((long) partition.getPartitionID()) << 32));
@@ -235,14 +244,21 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           }
         }
         partition.addSubgraph(subgraph);
+        String msg = String.valueOf(peer.getPeerIndex())+","+subgraphID.toString();
+        Message<LongWritable,LongWritable> subgraphLocationBroadcast = new Message<LongWritable,LongWritable>(IMessage.MessageType.SUBGRAPH,msg.getBytes());
+        for (String peerName : peer.getAllPeerNames()) {
+          peer.send(peerName, (IMessage<K, M>)subgraphLocationBroadcast);
+        }
+        
         System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
             + subgraph.vertexCount() + "Vertices");
       }
     }
   }
   
-  public LongTextAdjacencyListReader(BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer) {
+  public LongTextAdjacencyListReader(BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer,Map<K, Integer> subgraphPartitionMap) {
     this.peer = peer;
+    this.subgraphPartitionMap = subgraphPartitionMap;
   }
 
 }

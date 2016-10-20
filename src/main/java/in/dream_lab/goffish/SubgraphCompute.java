@@ -55,7 +55,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   
   @Override
   public void sendToAll(M message) {
-    
+    runner.sendToAll(message);
   }
   
   @Override
