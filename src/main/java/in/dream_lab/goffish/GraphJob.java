@@ -29,6 +29,7 @@ import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.BSPJob.JobState;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.OutgoingMessageManager;
@@ -37,6 +38,9 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
 import com.google.common.base.Preconditions;
 
 public class GraphJob extends BSPJob {
+  
+  public final static String VERTEX_CLASS_ATTR = "hama.subgraph.class";
+  
   public GraphJob(HamaConfiguration conf, Class<? extends Subgraph> exampleClass)
       throws IOException {
     super(conf); 
@@ -53,6 +57,26 @@ public class GraphJob extends BSPJob {
   public void setPartitioner(
       @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
+  }
+  
+  /**
+   * Set the Subgraph class for the job.
+   */
+  public void setSubgraphClass(
+      Class<? extends Subgraph<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable>> cls)
+      throws IllegalStateException {
+    conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
+    setInputKeyClass(cls);
+    setInputValueClass(NullWritable.class);
+  }
+  
+  /**
+   * Sets the input reader for parsing the input to vertices.
+   */
+  public void setInputReaderClass(
+      @SuppressWarnings("rawtypes") Class<? extends IReader> cls) {
+    conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
+        IReader.class);
   }
   
   public void setMaxIteration(int maxIteration) {

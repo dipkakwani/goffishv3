@@ -32,14 +32,15 @@ import org.apache.hama.bsp.TextOutputFormat;
 
 public class VertexCount {
   public static class VrtxCnt extends
-      SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
+      Subgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
     /* FIXME: Shouldn't be in user's logic. */
-    VrtxCnt(long subgraphID) {
+    VrtxCnt(int partitionID,LongWritable subgraphID) {
+      super(partitionID,subgraphID);
       System.out.println("Application constructor called");
     }
 
     @Override
-    public void compute(Collection<LongWritable> messages) {
+    public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
         long count = 0;
         for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : subgraph.getLocalVertices()) {

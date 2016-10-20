@@ -74,17 +74,13 @@ import org.apache.hama.util.WritableUtils;
 public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, IMessage<K, M>> {
 
-  Partition<S, V, E, I, J, K> partition;
-  BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
+  private Partition<S, V, E, I, J, K> partition;
+  private BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
+  private HamaConfiguration conf;
+  private static Class<?> SUBGRAPH_CLASS;
+  public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
   
-  
-  int getPartitionID(IVertex<V, E, I, J> v){
-    return (int) v.getVertexID() % peer.getNumPeers();
-  }
-  
-  int getPartitionID(long vertexID){
-    return (int) vertexID % peer.getNumPeers();
-  }
+  List<ISubgraph<S, V, E, I, J, K>> subgraphs;
   
   @Override
   public final void setup(
@@ -94,8 +90,14 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     setupfields(peer);
     /*TODO: Read input reader class type from Hama conf. 
      * FIXME:Make type of IMessage generic in Reader. */
-    LongTextAdjacencyListReader<S, V, E> reader = new LongTextAdjacencyListReader<S, V, E>(peer, partition);
+    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
+        (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>) ReflectionUtils
+        .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,IReader.class));
     // TODO: get subgraphs.
+    subgraphs = reader.getSubgraphs();
+    for (ISubgraph<S, V, E, I, J, K> subgraph: subgraphs) {
+      partition.addSubgraph(subgraph);
+    }
   }
   
   /*Initialize the  fields*/
@@ -104,6 +106,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     
     this.peer = peer;
     partition = new Partition(peer.getPeerIndex());
+    this.conf = peer.getConfiguration();
+    subgraphClass = (Class<Subgraph<?, ?, ?, ?, ?, ?, ?>>) conf.getClass(
+        "hama.subgraph.class", Subgraph.class);
+    SUBGRAPH_CLASS = subgraphClass;
     
   }
 
@@ -121,15 +127,16 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     boolean allVotedToHalt = false;
     while (!allVotedToHalt) {
       allVotedToHalt = true;
-      List<Text> messages = new ArrayList<Text>();
-      Text msg;
+      List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
+      IMessage<K, M> msg;
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
 
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
-      for (Subgraph subgraph : partition.getSubgraphs()) {
+      for (ISubgraph subgraph : subgraphs) {
         System.out.println("Calling compute "+subgraph.localVertexCount());
+        Subgraph asdf = (Subgraph)subgraph;
         /*
          * TODO : Clean up the code to call subgraphs that receive
          * message even when halted

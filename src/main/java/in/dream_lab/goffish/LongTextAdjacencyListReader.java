@@ -50,7 +50,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   BSPPeer<Writable, Writable, Writable, Writable, IMessage<LongWritable, LongWritable>> peer;
   Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition;
 
-  List<ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs()
+  /*
+   * Returns the list of subgraphs belonging to the current partition 
+   */
+  @Override
+  public  List<ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs()
       throws IOException, SyncException, InterruptedException {
     Map<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> partitionMap = new HashMap<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>>();
     Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
@@ -164,7 +168,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       if (v instanceof RemoteVertex) {
         String s = v.getVertexID() + "," + peer.getPeerIndex();
         for (String peerName : peer.getAllPeerNames()) {
-          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(IMessage.MessageType.QUERY, s.getBytes());
+          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(IMessage.MessageType.CUSTOM_MESSAGE, s.getBytes());
           peer.send(peerName, question);
         }
       }

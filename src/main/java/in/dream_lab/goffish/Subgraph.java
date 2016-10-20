@@ -29,7 +29,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.bsp.BSPPeer;
 
-public class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
+public class Subgraph <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraphCompute<S, V, E, M, I, J, K> {
   private static final long INITIALISATION_SUPERSTEPS = 3;
   K subgraphID;
   private List<IVertex<V, E, I, J>> _vertices;
@@ -40,6 +40,7 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
   //BSPPeer<Writable, Writable, Writable, Writable, Text> peer;
   int partitionID;
   S _value;
+  private boolean votedToHalt;
   
   Subgraph(int partitionID, K subgraphID) {
     this.partitionID = partitionID;
@@ -58,7 +59,6 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
     _verticesID.put(v.getVertexID(), v);
   }
   
-  @Override
   public IVertex<V, E, I, J> getVertexByID(I vertexID) {
     return _verticesID.get(vertexID);
   }
@@ -67,28 +67,23 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
     _edges.add(e);
   }
 
-  @Override
   public K getSubgraphID() {
     return subgraphID;
   }
 
-  @Override
   public long vertexCount() {
     return _vertices.size();
   }
   
-  @Override
   public long localVertexCount() {
     return _vertices.size() - _remoteVertices.size();
   }
 
-  @Override
   public List<IVertex<V, E, I, J>> getVertices() {
     return _vertices;
   }
   
   /* Avoid using this function as it is inefficient. */
-  @Override
   public List<IVertex<V, E, I, J>> getLocalVertices() {
     List<IVertex<V, E, I, J>> localVertices = new ArrayList<IVertex<V, E, I, J>>();
     for (IVertex<V, E, I, J> v : _vertices)
@@ -97,19 +92,62 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
     return localVertices;
   }
   
-  @Override
   public void setValue(S value) {
     _value = value;
   }
   
-  @Override
   public S getValue() {
     return _value; 
   }
   //public abstract void compute(List<Text> messages);
 
-  @Override
   public List<IRemoteVertex<V, E, I, J, K>> getRemoteVertices() {
     return _remoteVertices;
+  }
+
+  @Override
+  public ISubgraph<S, V, E, I, J, K> getSubgraph() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public void voteToHalt() {
+    votedToHalt=true;
+    
+  }
+  
+  public boolean hasVotedToHalt() {
+    return votedToHalt;
+  }
+
+  @Override
+  public long getSuperStep() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
+  @Override
+  public void compute(Collection<IMessage<K, M>> messages) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void sendMessage(K subgraphID, M message) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void sendToAll(M message) {
+    // TODO Auto-generated method stub
+    
+  }
+
+  @Override
+  public void sendToNeighbors(M message) {
+    // TODO Auto-generated method stub
+    
   }
 }
