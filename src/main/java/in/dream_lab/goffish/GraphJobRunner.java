@@ -79,6 +79,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
   private HamaConfiguration conf;
   private Map<K, List<IMessage<K, M>>> _messages;
+  private List<IMessage<K, M>> _broadcastMessages;
   private static Class<?> SUBGRAPH_CLASS;
   //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;  
   
@@ -167,6 +168,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     
   }
   
+  //TODO: Support this operation.
   void sendMessage(K subgraphID, M message) {
     List<IMessage<K, M>> messages = _messages.get(subgraphID);
     if (messages == null) {
@@ -174,6 +176,15 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     }
     IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, subgraphID, message.toString().getBytes());
     messages.add(msg);
+  }
+ 
+  void sendToNeighbors(M message) {
+    
+  }
+  
+  void sendToAll(M message) {
+    IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, message.toString().getBytes());
+    _broadcastMessages.add(msg);
   }
   
   int getPartitionID(K subgraphID) {
