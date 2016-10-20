@@ -90,9 +90,12 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     setupfields(peer);
     /*TODO: Read input reader class type from Hama conf. 
      * FIXME:Make type of IMessage generic in Reader. */
+    /*
     IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>) ReflectionUtils
-        .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER,IReader.class));
+        .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, LongTextAdjacencyListReader.class));
+        */
+    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E>(peer);
     // TODO: get subgraphs.
     subgraphs = reader.getSubgraphs();
     for (ISubgraph<S, V, E, I, J, K> subgraph: subgraphs) {
