@@ -41,7 +41,7 @@ import org.apache.hama.util.ReflectionUtils;
 
 
 /* Reads graph in the adjacency list format:
- * VID PartitionID StartEdgeID Sink1 Sink2 ...
+ * VID PartitionID Sink1 Sink2 ...
  */
 public class LongTextAdjacencyListReader<S extends Writable, V extends Writable, E extends Writable, K extends Writable, M extends Writable> 
  implements IReader <Writable, Writable, Writable, Writable, S, V, E, LongWritable, LongWritable, LongWritable> {
@@ -58,6 +58,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     Map<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> partitionMap = new HashMap<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>>();
     Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
     List<Vertex<V, E, LongWritable, LongWritable>> verticesList = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
+    long edgeCount = 0;
     
     KeyValuePair<Writable, Writable> pair;
     long numPeers = peer.getNumPeers();
@@ -66,7 +67,6 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       String value[] = pair.getValue().toString().split("\\s+");
       LongWritable sourceID = new LongWritable(Long.parseLong(value[0]));
       IntWritable partitionID = new IntWritable(Integer.parseInt(value[1]));
-      LongWritable startEdgeID = new LongWritable(Long.parseLong(value[2]));
       List<Vertex<V, E, LongWritable, LongWritable>> partitionVertices = partitionMap.get(partitionID);
       if (partitionVertices == null) {
         partitionVertices = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
@@ -78,7 +78,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         verticesList.add(source);
       }
       partitionVertices.add(source);
-      for (int i = 3; i < value.length; i++) {
+      for (int i = 2; i < value.length; i++) {
         LongWritable sinkID = new LongWritable(Long.parseLong(value[i]));
         Vertex<V, E, LongWritable, LongWritable> sink = (Vertex<V, E, LongWritable, LongWritable>)vertexMap.get(sinkID);   
         if (sink == null) {
@@ -86,8 +86,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           vertexMap.put(sinkID, sink);
           verticesList.add(sink);
         }
-        Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(startEdgeID, sinkID);
-        startEdgeID.set(startEdgeID.get() + 1);
+        LongWritable edgeID = new LongWritable(edgeCount++ | (((long) peer.getPeerIndex()) << 32));
+        Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(edgeID, sinkID);
         source.addEdge(e);
       }
     }
