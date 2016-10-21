@@ -30,22 +30,26 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   private IMessage.MessageType messageType;
   private K subgraphID;
   private int partitionID;
+  private boolean subgraphMessage;
+  private boolean partitionMessage;
   private byte[] msg;
   
   
   Message(IMessage.MessageType messageType, int partitionID, byte[] msg) {
     this.messageType = messageType;
     this.partitionID = partitionID;
+    this.partitionMessage = true;
     this.msg = msg;
   }
   
   Message(IMessage.MessageType messageType, K subgraphID, byte[] msg) {
     this.messageType = messageType;
     this.subgraphID = subgraphID;
+    this.subgraphMessage = true;
     this.msg = msg;
   }
   
-  Message(IMessage.MessageType messageType,byte[] msg) {
+  Message(IMessage.MessageType messageType, byte[] msg) {
     this.messageType = messageType;
     this.msg = msg;
   }
@@ -62,19 +66,34 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
 
   @Override
   public M getMessage() {
-    // TODO Auto-generated method stub
     return null;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, messageType);
-    
+    out.writeBoolean(subgraphMessage);
+    out.writeBoolean(partitionMessage);
+    if (subgraphMessage) {
+      subgraphID.write(out);
+    }
+    else if (partitionMessage) {
+      out.writeInt(partitionID);
+    }
+    out.write(msg);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
+    subgraphMessage = in.readBoolean();
+    partitionMessage = in.readBoolean();
+    if (subgraphMessage) {
+      subgraphID.readFields(in);
+    }
+    else if (partitionMessage) {
+      partitionID = in.readInt();
+    }
+    in.readFully(msg);
   }
-
 }

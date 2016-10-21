@@ -48,7 +48,7 @@ import in.dream_lab.goffish.IMessage.MessageType;
 public class LongTextAdjacencyListReader<S extends Writable, V extends Writable, E extends Writable, K extends Writable, M extends Writable> 
  implements IReader <Writable, Writable, Writable, Writable, S, V, E, LongWritable, LongWritable, LongWritable> {
   
-  Map<LongWritable, Vertex<V, E, LongWritable, LongWritable>> vertexMap;
+  Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap;
   BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
   private Map<K, Integer> subgraphPartitionMap;
   
@@ -59,7 +59,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   public  List<ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs()
       throws IOException, SyncException, InterruptedException {
     Map<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> partitionMap = new HashMap<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>>();
-    Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
+    vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
     List<Vertex<V, E, LongWritable, LongWritable>> verticesList = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
     long edgeCount = 0;
     
@@ -168,6 +168,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       if (sink == null) {
         sink = new RemoteVertex<V, E, LongWritable, LongWritable, LongWritable>(sinkID);
         _vertices.add(sink);
+        vertexMap.put(sinkID, sink);
       }
     }    
 
@@ -233,7 +234,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   /* Forms subgraphs by finding (weakly) connected components. */
   void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, List<IVertex<V, E, LongWritable, LongWritable>> vertices) throws IOException {
     long subgraphCount = 0;
-    Set<Long> visited = new HashSet<Long>();    
+    Set<Long> visited = new HashSet<Long>();  
+    System.out.println(" Size " + vertices.size()+ "=size=" + vertexMap.size());
     
     for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
       if (!visited.contains(v.getVertexID())) {
@@ -246,15 +248,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         while (!Q.isEmpty()) {
           LongWritable vertexID = Q.poll();
           IVertex<V, E, LongWritable, LongWritable> source = vertexMap.get(vertexID);
-          if (source == null) { // Remote Vertex
-            // TODO: Add to subgraph remote vertex list.
-            continue;
-          }
           for (IEdge<E, LongWritable, LongWritable> e : source.outEdges()) {
-            IVertex<V, E, LongWritable, LongWritable> sink = (IVertex<V, E, LongWritable, LongWritable>) e.getSinkVertexID();
-            if (!visited.contains(sink.getVertexID())) {
-              subgraph.addVertex(sink);
-              Q.add(sink.getVertexID());
+            LongWritable sinkID = e.getSinkVertexID();
+            if (!visited.contains(sinkID)) {
+              subgraph.addVertex(vertexMap.get(sinkID));
+              Q.add(sinkID);
             }
           }
         }
