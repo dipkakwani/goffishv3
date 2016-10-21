@@ -78,8 +78,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private Partition<S, V, E, I, J, K> partition;
   private BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
   private HamaConfiguration conf;
-  private Map<K, List<IMessage<K, M>>> _messages;
-  private List<IMessage<K, M>> _broadcastMessages;
   private Map<K, Integer> subgraphPartitionMap;
   private static Class<?> SUBGRAPH_CLASS;
   //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;  
@@ -110,7 +108,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     this.peer = peer;
     partition = new Partition<S, V, E, I, J, K>(peer.getPeerIndex());
     this.conf = peer.getConfiguration();
-    _messages = new HashMap<K, List<IMessage<K, M>>>();
     /*subgraphClass = (Class<Subgraph<?, ?, ?, ?, ?, ?, ?>>) conf.getClass(
         "hama.subgraph.class", Subgraph.class);
     SUBGRAPH_CLASS = subgraphClass;
