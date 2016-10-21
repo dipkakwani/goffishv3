@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableUtils;
 
 public class Message<K extends Writable, M extends Writable> implements IMessage<K, M> {
   private IMessage.MessageType messageType;
@@ -67,14 +68,13 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
 
   @Override
   public void write(DataOutput out) throws IOException {
-    // TODO Auto-generated method stub
+    WritableUtils.writeEnum(out, messageType);
     
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    // TODO Auto-generated method stub
-    
+    messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
   }
 
 }

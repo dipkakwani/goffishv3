@@ -70,9 +70,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       String value[] = pair.getValue().toString().split("\\s+");
       LongWritable sourceID = new LongWritable(Long.parseLong(value[0]));
       IntWritable partitionID = new IntWritable(Integer.parseInt(value[1]));
+      //System.out.println("Partition ID: " + partitionID + " source ID: " + sourceID);
       List<Vertex<V, E, LongWritable, LongWritable>> partitionVertices = partitionMap.get(partitionID);
       if (partitionVertices == null) {
         partitionVertices = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
+        partitionMap.put(partitionID, partitionVertices);
       }
       Vertex<V, E, LongWritable, LongWritable> source = (Vertex<V, E, LongWritable, LongWritable>)vertexMap.get(sourceID);
       if (source == null) {
@@ -83,6 +85,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       partitionVertices.add(source);
       for (int i = 2; i < value.length; i++) {
         LongWritable sinkID = new LongWritable(Long.parseLong(value[i]));
+        //System.out.print(sinkID + "  ");
         Vertex<V, E, LongWritable, LongWritable> sink = (Vertex<V, E, LongWritable, LongWritable>)vertexMap.get(sinkID);   
         if (sink == null) {
           sink = new Vertex<V, E, LongWritable, LongWritable>(sinkID);
@@ -93,11 +96,15 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(edgeID, sinkID);
         source.addEdge(e);
       }
+      //System.out.println();
     }
    
     List<IVertex<V, E, LongWritable, LongWritable>> _vertices = new ArrayList<IVertex<V, E, LongWritable, LongWritable>>(); // Final list of vertices.
     vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
 
+    System.out.println("Partition 0 " + partitionMap.containsKey(0));
+
+    System.out.println("Partition 1 " + partitionMap.containsKey(1));
     // Send vertices to their respective partitions.
     for (Map.Entry<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> entry : partitionMap.entrySet()) {  
       if (entry.getKey().get() != peer.getPeerIndex()) {
@@ -113,15 +120,17 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         Message<LongWritable, LongWritable> msg = new Message<LongWritable, LongWritable>(IMessage.MessageType.VERTEX, entry.getKey().get(), String.valueOf(sb).getBytes());
         peer.send(peer.getPeerName(entry.getKey().get()), (IMessage<K, M>)msg);
       } else { // Belongs to this partition
+        System.out.println("Local " + peer.getPeerIndex() + " = " + entry.getKey() + " size " + entry.getValue().size());
         _vertices.addAll(entry.getValue());
         for (Vertex<V, E, LongWritable, LongWritable> v : entry.getValue()) {
           vertexMap.put(v.getVertexID(), v);
         }
       }
     }
+    /*
     for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
       System.out.println(v.getVertexID());
-    }
+    }*/
     
     System.out.println(_vertices.size()+"=size="+vertexMap.size());
 
@@ -150,6 +159,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         } 
       }  
     }
+
+    System.out.println("After receiving vertices size " + _vertices.size()+"=size="+vertexMap.size());
     /* Create remote vertex objects. */
     for (Edge<E, LongWritable, LongWritable> e : _edges) {
       LongWritable sinkID = e.getSinkVertexID();
@@ -235,6 +246,10 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         while (!Q.isEmpty()) {
           LongWritable vertexID = Q.poll();
           IVertex<V, E, LongWritable, LongWritable> source = vertexMap.get(vertexID);
+          if (source == null) { // Remote Vertex
+            // TODO: Add to subgraph remote vertex list.
+            continue;
+          }
           for (IEdge<E, LongWritable, LongWritable> e : source.outEdges()) {
             IVertex<V, E, LongWritable, LongWritable> sink = (IVertex<V, E, LongWritable, LongWritable>) e.getSinkVertexID();
             if (!visited.contains(sink.getVertexID())) {
