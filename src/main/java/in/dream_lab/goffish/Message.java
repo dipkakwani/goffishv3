@@ -29,10 +29,16 @@ import org.apache.hadoop.io.WritableUtils;
 public class Message<K extends Writable, M extends Writable> implements IMessage<K, M> {
   private IMessage.MessageType messageType;
   private K subgraphID;
-  private int partitionID;
-  private boolean subgraphMessage;
-  private boolean partitionMessage;
-  private byte[] msg;
+  //private int partitionID;
+  //private boolean subgraphMessage;
+  //private boolean partitionMessage;
+  //private byte[] msg; // Replace with writable
+  private M message;
+  private IControlMessage control;
+  
+  Message() {
+    this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
+  }
   
   Message() {
     this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
