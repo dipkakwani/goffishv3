@@ -34,6 +34,9 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   private boolean partitionMessage;
   private byte[] msg;
   
+  Message() {
+    this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
+  }
   
   Message(IMessage.MessageType messageType, int partitionID, byte[] msg) {
     this.messageType = messageType;

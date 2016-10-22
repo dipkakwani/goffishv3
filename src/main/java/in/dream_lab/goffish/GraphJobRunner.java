@@ -73,10 +73,10 @@ import org.apache.hama.util.WritableUtils;
  */
 //@SuppressWarnings("rawtypes")
 public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
-    extends BSP<Writable, Writable, Writable, Writable, IMessage<K, M>> {
+    extends BSP<Writable, Writable, Writable, Writable, Message<K, M>> {
 
   private Partition<S, V, E, I, J, K> partition;
-  private BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
+  private BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
   private HamaConfiguration conf;
   private Map<K, Integer> subgraphPartitionMap;
   private static Class<?> SUBGRAPH_CLASS;
@@ -84,18 +84,19 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   @Override
   public final void setup(
-      BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
 
     setupfields(peer);
     /*TODO: Read input reader class type from Hama conf. 
-     * FIXME:Make type of IMessage generic in Reader. */
+     * FIXME:Make type of Message generic in Reader. */
     /*
     IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>) ReflectionUtils
         .newInstance(conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, LongTextAdjacencyListReader.class));
         */
-    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
+    IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
+        (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       partition.addSubgraph(subgraph);
     }
@@ -103,7 +104,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   /*Initialize the  fields*/
   private void setupfields(
-      BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer) {
+      BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer) {
     
     this.peer = peer;
     partition = new Partition<S, V, E, I, J, K>(peer.getPeerIndex());
@@ -118,7 +119,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
    
   @Override
   public final void bsp(
-      BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
     
     /*TODO: Make execute subgraphs compute in parallel.
@@ -137,7 +138,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     while (!allVotedToHalt) {
       allVotedToHalt = true;
       List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
-      IMessage<K, M> msg;
+      Message<K, M> msg;
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
@@ -161,17 +162,17 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
 
   @Override
   public final void cleanup(
-      BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer)
+      BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
     
   }
   
   void sendMessage(K subgraphID, M message) {
-    //List<IMessage<K, M>> messages = _messages.get(subgraphID);
+    //List<Message<K, M>> messages = _messages.get(subgraphID);
     //if (messages == null) {
-    //  messages = new ArrayList<IMessage<K, M>>();
+    //  messages = new ArrayList<Message<K, M>>();
     //}
-    IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, subgraphID, message.toString().getBytes());
+    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, subgraphID, message.toString().getBytes());
     try {
       peer.send(peer.getPeerName(subgraphPartitionMap.get(subgraphID)), msg);
     } catch (IOException e) {
@@ -186,7 +187,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   }
   
   void sendToAll(M message) {
-    IMessage<K, M> msg = new Message<K, M>(IMessage.MessageType.CUSTOM_MESSAGE, message.toString().getBytes());
+    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, message.toString().getBytes());
     //_broadcastMessages.add(msg);
     for (String peerName : peer.getAllPeerNames()) {
       try {

@@ -49,7 +49,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
  implements IReader <Writable, Writable, Writable, Writable, S, V, E, LongWritable, LongWritable, LongWritable> {
   
   Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap;
-  BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer;
+  BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
   private Map<K, Integer> subgraphPartitionMap;
   
   /*
@@ -117,8 +117,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           }
           sb.append(',');
         }
-        Message<LongWritable, LongWritable> msg = new Message<LongWritable, LongWritable>(IMessage.MessageType.VERTEX, entry.getKey().get(), String.valueOf(sb).getBytes());
-        peer.send(peer.getPeerName(entry.getKey().get()), (IMessage<K, M>)msg);
+        Message<LongWritable, LongWritable> msg = new Message<LongWritable, LongWritable>(Message.MessageType.VERTEX, entry.getKey().get(), String.valueOf(sb).getBytes());
+        peer.send(peer.getPeerName(entry.getKey().get()), (Message<K, M>)msg);
       } else { // Belongs to this partition
         System.out.println("Local " + peer.getPeerIndex() + " = " + entry.getKey() + " size " + entry.getValue().size());
         _vertices.addAll(entry.getValue());
@@ -136,9 +136,9 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
 
     // End of first superstep.
     peer.sync();
-    IMessage<LongWritable, LongWritable> msg;
+    Message<LongWritable, LongWritable> msg;
     List<Edge<E, LongWritable, LongWritable>> _edges = new ArrayList<Edge<E, LongWritable, LongWritable>>();
-    while ((msg = (IMessage<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
       String msgStringArr[] = msgString.split(",");
       for (int i = 0; i < msgStringArr.length; i++) {
@@ -184,16 +184,16 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       if (v instanceof RemoteVertex) {
         String s = v.getVertexID() + "," + peer.getPeerIndex();
         for (String peerName : peer.getAllPeerNames()) {
-          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(IMessage.MessageType.CUSTOM_MESSAGE, s.getBytes());
-          peer.send(peerName, (IMessage<K, M>)question);
+          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(Message.MessageType.CUSTOM_MESSAGE, s.getBytes());
+          peer.send(peerName, (Message<K, M>)question);
         }
       }
     }
 
     peer.sync();
 
-    while ((msg = (IMessage<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
-      if (msg.getMessageType() == IMessage.MessageType.SUBGRAPH) {
+    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+      if (msg.getMessageType() == Message.MessageType.SUBGRAPH) {
         String msgString = msg.toString();
         String msgStringArr[] = msgString.split(",");
         subgraphPartitionMap.put((K)new LongWritable(Long.valueOf(msgStringArr[1])), Integer.valueOf(msgStringArr[0]));
@@ -206,8 +206,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         IVertex<V, E, LongWritable, LongWritable> v = subgraph.getVertexByID(sinkID);
         if (v !=null) {
           String reply = sinkID + "," + subgraph.getSubgraphID();
-          Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(IMessage.MessageType.CUSTOM_MESSAGE,reply.getBytes()); 
-          peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),(IMessage<K, M>)subgraphIDReply);
+          Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(Message.MessageType.CUSTOM_MESSAGE,reply.getBytes()); 
+          peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),(Message<K, M>)subgraphIDReply);
         }
       }
     }
@@ -215,7 +215,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     peer.sync();
     System.out.println("Messages to all neighbours sent");
     
-    while ((msg = (IMessage<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       String msgString = msg.toString();
       String msgStringArr[] = msgString.split(",");
       LongWritable sinkID = new LongWritable(Long.parseLong(msgStringArr[0]));
@@ -258,9 +258,9 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         }
         partition.addSubgraph(subgraph);
         String msg = String.valueOf(peer.getPeerIndex())+","+subgraphID.toString();
-        Message<LongWritable,LongWritable> subgraphLocationBroadcast = new Message<LongWritable,LongWritable>(IMessage.MessageType.SUBGRAPH,msg.getBytes());
+        Message<LongWritable,LongWritable> subgraphLocationBroadcast = new Message<LongWritable,LongWritable>(Message.MessageType.SUBGRAPH,msg.getBytes());
         for (String peerName : peer.getAllPeerNames()) {
-          peer.send(peerName, (IMessage<K, M>)subgraphLocationBroadcast);
+          peer.send(peerName, (Message<K, M>)subgraphLocationBroadcast);
         }
         
         System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
@@ -269,7 +269,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     }
   }
   
-  public LongTextAdjacencyListReader(BSPPeer<Writable, Writable, Writable, Writable, IMessage<K, M>> peer,Map<K, Integer> subgraphPartitionMap) {
+  public LongTextAdjacencyListReader(BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer,Map<K, Integer> subgraphPartitionMap) {
     this.peer = peer;
     this.subgraphPartitionMap = subgraphPartitionMap;
   }
