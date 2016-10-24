@@ -27,7 +27,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   
   @Override
   public long getSuperStep() {
-    return superStepCount;
+    return runner.getSuperStepCount();
   }
   
   @Override
@@ -60,7 +60,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   
   @Override
   public void sendToNeighbors(M message) {
-    
+    runner.sendToNeighbors(subgraph, message);
   }
   
 

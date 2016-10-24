@@ -40,10 +40,17 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
   }
   
-  Message() {
-    this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
+  Message(IMessage.MessageType messageType, K subgraphID, M msg) {
+    this.messageType = messageType;
+    this.subgraphID = subgraphID;
+    this.message = msg;
   }
   
+  Message(IMessage.MessageType messageType, M msg) {
+    this.messageType = messageType;
+    this.message = msg;
+  }
+/*  
   Message(IMessage.MessageType messageType, int partitionID, byte[] msg) {
     this.messageType = messageType;
     this.partitionID = partitionID;
@@ -51,18 +58,15 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     this.msg = msg;
   }
   
-  Message(IMessage.MessageType messageType, K subgraphID, byte[] msg) {
-    this.messageType = messageType;
-    this.subgraphID = subgraphID;
-    this.subgraphMessage = true;
-    this.msg = msg;
-  }
-  
   Message(IMessage.MessageType messageType, byte[] msg) {
     this.messageType = messageType;
     this.msg = msg;
   }
-
+*/  
+  public void setControlInfo(IControlMessage controlMessage) {
+    this.control = controlMessage;
+  }
+  
   @Override
   public in.dream_lab.goffish.IMessage.MessageType getMessageType() {
     return messageType;

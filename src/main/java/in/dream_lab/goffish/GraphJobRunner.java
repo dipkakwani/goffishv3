@@ -75,6 +75,8 @@ import org.apache.hama.util.WritableUtils;
 public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, Message<K, M>> {
 
+  private static final long INITIALIZATION_SUPERSTEPS = 3; 
+  
   private Partition<S, V, E, I, J, K> partition;
   private BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
   private HamaConfiguration conf;
@@ -172,7 +174,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //if (messages == null) {
     //  messages = new ArrayList<Message<K, M>>();
     //}
-    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, subgraphID, message.toString().getBytes());
+    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, subgraphID, message);
     try {
       peer.send(peer.getPeerName(subgraphPartitionMap.get(subgraphID)), msg);
     } catch (IOException e) {
@@ -182,8 +184,15 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //messages.add(msg);
   }
  
-  void sendToNeighbors(M message) {
-    
+  void sendToNeighbors(ISubgraph<S, V, E, I, J, K> subgraph, M message) {
+    Set<K> sent = new HashSet<K>();
+    for (IRemoteVertex<V, E, I, J, K> remotevertices: subgraph.getRemoteVertices()) {
+      K neighbourID = remotevertices.getSubgraphID();
+      if (!sent.contains(neighbourID)) {
+        sent.add(neighbourID);
+        sendMessage(neighbourID, message);
+      }
+    }
   }
   
   void sendToAll(M message) {
@@ -197,6 +206,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         e.printStackTrace();
       }
     }
+  }
+  
+  long getSuperStepCount() {
+    return peer.getSuperstepCount()-INITIALIZATION_SUPERSTEPS;
   }
   
   int getPartitionID(K subgraphID) {

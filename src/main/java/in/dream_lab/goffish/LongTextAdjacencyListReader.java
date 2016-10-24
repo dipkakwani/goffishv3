@@ -234,7 +234,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   /* Forms subgraphs by finding (weakly) connected components. */
   void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, List<IVertex<V, E, LongWritable, LongWritable>> vertices) throws IOException {
     long subgraphCount = 0;
-    Set<Long> visited = new HashSet<Long>();  
+    Set<LongWritable> visited = new HashSet<LongWritable>();  
     System.out.println(" Size " + vertices.size()+ "=size=" + vertexMap.size());
     
     for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
@@ -244,6 +244,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         //BFS
         Queue<LongWritable> Q = new LinkedList<LongWritable>();
         Q.add(v.getVertexID());
+        visited.add(v.getVertexID());
         subgraph.addVertex(v);
         while (!Q.isEmpty()) {
           LongWritable vertexID = Q.poll();
@@ -253,6 +254,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
             if (!visited.contains(sinkID)) {
               subgraph.addVertex(vertexMap.get(sinkID));
               Q.add(sinkID);
+              visited.add(sinkID);
             }
           }
         }
