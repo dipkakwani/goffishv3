@@ -196,7 +196,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   }
   
   void sendToAll(M message) {
-    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, message.toString().getBytes());
+    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, message);
     //_broadcastMessages.add(msg);
     for (String peerName : peer.getAllPeerNames()) {
       try {

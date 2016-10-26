@@ -20,5 +20,10 @@ package in.dream_lab.goffish;
 import org.apache.hadoop.io.Writable;
 
 public interface IControlMessage extends Writable {
-
+  public enum TransmissionType {
+    PARTITION,
+    VERTEX
+  }
+  
+  TransmissionType getTransmissionType();
 }

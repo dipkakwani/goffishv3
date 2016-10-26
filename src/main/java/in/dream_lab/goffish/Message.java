@@ -84,29 +84,17 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
 
   @Override
   public void write(DataOutput out) throws IOException {
+    subgraphID.write(out);
+    message.write(out);
     WritableUtils.writeEnum(out, messageType);
-    out.writeBoolean(subgraphMessage);
-    out.writeBoolean(partitionMessage);
-    if (subgraphMessage) {
-      subgraphID.write(out);
-    }
-    else if (partitionMessage) {
-      out.writeInt(partitionID);
-    }
-    out.write(msg);
+    control.write(out);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    subgraphID.readFields(in);
+    message.readFields(in);
     messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
-    subgraphMessage = in.readBoolean();
-    partitionMessage = in.readBoolean();
-    if (subgraphMessage) {
-      subgraphID.readFields(in);
-    }
-    else if (partitionMessage) {
-      partitionID = in.readInt();
-    }
-    in.readFully(msg);
+    control.readFields(in);
   }
 }
