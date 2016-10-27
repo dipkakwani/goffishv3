@@ -21,6 +21,8 @@ import org.apache.hadoop.io.Writable;
 
 public interface IControlMessage extends Writable {
   public enum TransmissionType {
+    NORMAL,
+    BROADCAST,
     PARTITION,
     VERTEX
   }

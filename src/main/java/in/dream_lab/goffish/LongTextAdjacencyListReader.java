@@ -38,6 +38,7 @@ import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
+import org.slf4j.helpers.SubstituteLoggerFactory;
 
 import in.dream_lab.goffish.IMessage.MessageType;
 
@@ -117,7 +118,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           }
           sb.append(',');
         }
-        Message<LongWritable, LongWritable> msg = new Message<LongWritable, LongWritable>(Message.MessageType.VERTEX, entry.getKey().get(), String.valueOf(sb).getBytes());
+        Message<LongWritable, LongWritable> msg = new Message<LongWritable, LongWritable>();
+        ControlMessage controlInfo = new ControlMessage();
+        controlInfo.setTransmissionType(IControlMessage.TransmissionType.VERTEX);
+        controlInfo.setVertexValues(sb.toString());
+        msg.setControlInfo(controlInfo);
         peer.send(peer.getPeerName(entry.getKey().get()), (Message<K, M>)msg);
       } else { // Belongs to this partition
         System.out.println("Local " + peer.getPeerIndex() + " = " + entry.getKey() + " size " + entry.getValue().size());
@@ -139,7 +144,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     Message<LongWritable, LongWritable> msg;
     List<Edge<E, LongWritable, LongWritable>> _edges = new ArrayList<Edge<E, LongWritable, LongWritable>>();
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
-      String msgString = msg.toString();
+      String msgString = msg.getControlInfo().toString();
       String msgStringArr[] = msgString.split(",");
       for (int i = 0; i < msgStringArr.length; i++) {
         String vertexInfo[] = msgStringArr[i].split(" ");
@@ -184,7 +189,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       if (v instanceof RemoteVertex) {
         String s = v.getVertexID() + "," + peer.getPeerIndex();
         for (String peerName : peer.getAllPeerNames()) {
-          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>(Message.MessageType.CUSTOM_MESSAGE, s.getBytes());
+          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>();
+          ControlMessage controlInfo = new ControlMessage();
+          controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+          controlInfo.setextraInfo(s);
+          msg.setControlInfo(controlInfo);
           peer.send(peerName, (Message<K, M>)question);
         }
       }
@@ -194,7 +203,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
 
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       if (msg.getMessageType() == Message.MessageType.SUBGRAPH) {
-        String msgString = msg.toString();
+        String msgString = ((ControlMessage)msg.getControlInfo()).getExtraInfo();
         String msgStringArr[] = msgString.split(",");
         subgraphPartitionMap.put((K)new LongWritable(Long.valueOf(msgStringArr[1])), Integer.valueOf(msgStringArr[0]));
         continue;
@@ -206,7 +215,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         IVertex<V, E, LongWritable, LongWritable> v = subgraph.getVertexByID(sinkID);
         if (v !=null) {
           String reply = sinkID + "," + subgraph.getSubgraphID();
-          Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(Message.MessageType.CUSTOM_MESSAGE,reply.getBytes()); 
+          Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(); 
+          ControlMessage controlInfo = new ControlMessage();
+          controlInfo.setTransmissionType(IControlMessage.TransmissionType.NORMAL);
+          controlInfo.setextraInfo(reply);
+          msg.setControlInfo(controlInfo);
           peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),(Message<K, M>)subgraphIDReply);
         }
       }
@@ -216,7 +229,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     System.out.println("Messages to all neighbours sent");
     
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
-      String msgString = msg.toString();
+      String msgString = ((ControlMessage)msg.getControlInfo()).getExtraInfo();
       String msgStringArr[] = msgString.split(",");
       LongWritable sinkID = new LongWritable(Long.parseLong(msgStringArr[0]));
       LongWritable remoteSubgraphID = new LongWritable(
@@ -260,7 +273,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         }
         partition.addSubgraph(subgraph);
         String msg = String.valueOf(peer.getPeerIndex())+","+subgraphID.toString();
-        Message<LongWritable,LongWritable> subgraphLocationBroadcast = new Message<LongWritable,LongWritable>(Message.MessageType.SUBGRAPH,msg.getBytes());
+        Message<LongWritable,LongWritable> subgraphLocationBroadcast = new Message<LongWritable,LongWritable>();
+        ControlMessage controlInfo = new ControlMessage();
+        controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+        controlInfo.setextraInfo(msg);
+        subgraphLocationBroadcast.setControlInfo(controlInfo);
         for (String peerName : peer.getAllPeerNames()) {
           peer.send(peerName, (Message<K, M>)subgraphLocationBroadcast);
         }

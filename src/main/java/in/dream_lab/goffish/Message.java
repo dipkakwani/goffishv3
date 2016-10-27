@@ -20,9 +20,7 @@ package in.dream_lab.goffish;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.List;
 
-import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
@@ -30,9 +28,6 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   private IMessage.MessageType messageType;
   private K subgraphID;
   //private int partitionID;
-  //private boolean subgraphMessage;
-  //private boolean partitionMessage;
-  //private byte[] msg; // Replace with writable
   private M message;
   private IControlMessage control;
   
@@ -50,21 +45,13 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     this.messageType = messageType;
     this.message = msg;
   }
-/*  
-  Message(IMessage.MessageType messageType, int partitionID, byte[] msg) {
-    this.messageType = messageType;
-    this.partitionID = partitionID;
-    this.partitionMessage = true;
-    this.msg = msg;
-  }
   
-  Message(IMessage.MessageType messageType, byte[] msg) {
-    this.messageType = messageType;
-    this.msg = msg;
-  }
-*/  
   public void setControlInfo(IControlMessage controlMessage) {
     this.control = controlMessage;
+  }
+  
+  public IControlMessage getControlInfo() {
+    return control;
   }
   
   @Override

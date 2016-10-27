@@ -175,6 +175,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //  messages = new ArrayList<Message<K, M>>();
     //}
     Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, subgraphID, message);
+    ControlMessage controlInfo = new ControlMessage();
+    controlInfo.setTransmissionType(IControlMessage.TransmissionType.NORMAL);
+    msg.setControlInfo(controlInfo);
     try {
       peer.send(peer.getPeerName(subgraphPartitionMap.get(subgraphID)), msg);
     } catch (IOException e) {
@@ -197,6 +200,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   void sendToAll(M message) {
     Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, message);
+    ControlMessage controlInfo = new ControlMessage();
+    controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+    msg.setControlInfo(controlInfo);
     //_broadcastMessages.add(msg);
     for (String peerName : peer.getAllPeerNames()) {
       try {
