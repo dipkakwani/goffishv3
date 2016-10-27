@@ -31,6 +31,11 @@ public class ControlMessage implements IControlMessage{
   private Text generalInfo;
   private int partitionID;
   
+  public ControlMessage() {
+    transmissionType = IControlMessage.TransmissionType.NORMAL;
+    generalInfo = new Text("");
+  }
+  
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, transmissionType);
@@ -38,7 +43,7 @@ public class ControlMessage implements IControlMessage{
     if (isPartitionMessage()) {
       out.writeInt(partitionID);
     }
-    else {
+    else if(isVertexMessage()) {
       out.writeBytes(vertexValues);
     }
   }
@@ -50,7 +55,7 @@ public class ControlMessage implements IControlMessage{
     if (isPartitionMessage()) {
       partitionID = in.readInt();
     }
-    else {
+    else if (isVertexMessage()) {
       vertexValues = in.readLine();
     }
   }

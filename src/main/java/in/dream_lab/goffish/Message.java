@@ -28,21 +28,28 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   private IMessage.MessageType messageType;
   private K subgraphID;
   //private int partitionID;
+  private boolean hasSubgraphID;
+  private boolean hasMessage = true;
+  
   private M message;
   private IControlMessage control;
   
   Message() {
     this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
+    this.hasSubgraphID = false;
+    this.hasMessage = false;
   }
   
   Message(IMessage.MessageType messageType, K subgraphID, M msg) {
     this.messageType = messageType;
     this.subgraphID = subgraphID;
+    this.hasSubgraphID = true;
     this.message = msg;
   }
   
   Message(IMessage.MessageType messageType, M msg) {
     this.messageType = messageType;
+    this.hasSubgraphID = false;
     this.message = msg;
   }
   
@@ -75,17 +82,29 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
 
   @Override
   public void write(DataOutput out) throws IOException {
-    subgraphID.write(out);
-    message.write(out);
-    WritableUtils.writeEnum(out, messageType);
     control.write(out);
+    WritableUtils.writeEnum(out, messageType);
+    out.writeBoolean(hasSubgraphID);
+    if (hasSubgraphID) {
+      subgraphID.write(out);
+    }
+    out.writeBoolean(hasMessage);
+    if (hasMessage) {
+      message.write(out);
+    }
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    subgraphID.readFields(in);
-    message.readFields(in);
-    messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
     control.readFields(in);
+    messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
+    hasSubgraphID = in.readBoolean();
+    if (hasSubgraphID) {
+      subgraphID.readFields(in);
+    }
+    hasMessage = in.readBoolean();
+    if (hasMessage) {
+      message.readFields(in);
+    }    
   }
 }
