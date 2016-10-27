@@ -274,6 +274,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         partition.addSubgraph(subgraph);
         String msg = String.valueOf(peer.getPeerIndex())+","+subgraphID.toString();
         Message<LongWritable,LongWritable> subgraphLocationBroadcast = new Message<LongWritable,LongWritable>();
+        subgraphLocationBroadcast.setMessageType(IMessage.MessageType.SUBGRAPH);
         ControlMessage controlInfo = new ControlMessage();
         controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
         controlInfo.setextraInfo(msg);

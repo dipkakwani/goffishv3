@@ -58,6 +58,10 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   public in.dream_lab.goffish.IMessage.MessageType getMessageType() {
     return messageType;
   }
+  
+  public void setMessageType(IMessage.MessageType messageType) {
+    this.messageType = messageType;
+  }
 
   @Override
   public K getSubgraphID() {
