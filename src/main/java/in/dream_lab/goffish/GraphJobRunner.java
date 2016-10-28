@@ -89,6 +89,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
 
+    System.out.println("BSP Setup");
     setupfields(peer);
     /*TODO: Read input reader class type from Hama conf. 
      * FIXME:Make type of Message generic in Reader. */

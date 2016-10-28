@@ -1,4 +1,6 @@
 /**
+
+
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -27,7 +29,7 @@ import org.apache.hadoop.io.WritableUtils;
 public class ControlMessage implements IControlMessage{
 
   private IControlMessage.TransmissionType transmissionType;
-  private String vertexValues;
+  private Text vertexValues;
   private Text generalInfo;
   private int partitionID;
   
@@ -44,7 +46,7 @@ public class ControlMessage implements IControlMessage{
       out.writeInt(partitionID);
     }
     else if(isVertexMessage()) {
-      out.writeBytes(vertexValues);
+      vertexValues.write(out);
     }
   }
 
@@ -56,7 +58,7 @@ public class ControlMessage implements IControlMessage{
       partitionID = in.readInt();
     }
     else if (isVertexMessage()) {
-      vertexValues = in.readLine();
+      vertexValues.readFields(in);
     }
   }
 
@@ -74,7 +76,7 @@ public class ControlMessage implements IControlMessage{
   }
   
   public void setVertexValues(String vertex) {
-    this.vertexValues = vertex;
+    this.vertexValues = new Text(vertex);
   }
   
   public void setextraInfo(String info) {
@@ -106,7 +108,7 @@ public class ControlMessage implements IControlMessage{
       return String.valueOf(partitionID);
     }
     else if (isVertexMessage()) {
-      return vertexValues;
+      return vertexValues.toString();
     }
     else {
       return null;

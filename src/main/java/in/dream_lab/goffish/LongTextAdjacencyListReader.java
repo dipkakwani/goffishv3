@@ -40,6 +40,8 @@ import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
 import org.slf4j.helpers.SubstituteLoggerFactory;
 
+import com.sun.tools.classfile.SourceID_attribute;
+
 import in.dream_lab.goffish.IMessage.MessageType;
 
 
@@ -144,6 +146,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     Message<LongWritable, LongWritable> msg;
     List<Edge<E, LongWritable, LongWritable>> _edges = new ArrayList<Edge<E, LongWritable, LongWritable>>();
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+      System.out.println("Recieved some vertices");
       String msgString = msg.getControlInfo().toString();
       String msgStringArr[] = msgString.split(",");
       for (int i = 0; i < msgStringArr.length; i++) {
@@ -175,7 +178,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         _vertices.add(sink);
         vertexMap.put(sinkID, sink);
       }
-    }    
+    }
 
     Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition = new Partition<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex());
     
@@ -257,19 +260,29 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         //BFS
         Queue<LongWritable> Q = new LinkedList<LongWritable>();
         Q.add(v.getVertexID());
-        visited.add(v.getVertexID());
+        //visited.add(v.getVertexID());
         subgraph.addVertex(v);
         while (!Q.isEmpty()) {
+          System.out.println("Next level of search");
           LongWritable vertexID = Q.poll();
+          if(visited.contains(vertexID)) {
+            continue;
+          }
+          visited.add(vertexID);
           IVertex<V, E, LongWritable, LongWritable> source = vertexMap.get(vertexID);
+          source.isRemote();
+          System.out.println("Vertex"+vertexID+" has "+source.outEdges().size()+" edges");
           for (IEdge<E, LongWritable, LongWritable> e : source.outEdges()) {
             LongWritable sinkID = e.getSinkVertexID();
+            System.out.println("Another Edge");
             if (!visited.contains(sinkID)) {
+              System.out.println("Neighbour "+sinkID);
               subgraph.addVertex(vertexMap.get(sinkID));
+              System.out.println("LINE 2 DEBUG");
               Q.add(sinkID);
-              visited.add(sinkID);
             }
           }
+          System.out.println("All Edges of 1 vertex added");
         }
         partition.addSubgraph(subgraph);
         String msg = String.valueOf(peer.getPeerIndex())+","+subgraphID.toString();

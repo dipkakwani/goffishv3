@@ -54,8 +54,12 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
 
   void addVertex(IVertex<V, E, I, J> v) {
     _vertices.add(v);
-    if (v.isRemote())
+    System.out.println("2");
+    if (v.isRemote()) {
+      System.out.println("2.5");
       _remoteVertices.add((IRemoteVertex<V, E, I, J, K>)v);
+    }
+    System.out.println("3");
     _verticesID.put(v.getVertexID(), v);
   }
   
