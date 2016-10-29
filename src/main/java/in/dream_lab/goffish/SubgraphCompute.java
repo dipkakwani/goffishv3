@@ -27,6 +27,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   
   public void init(GraphJobRunner<S, V, E, M, I, J, K> runner) {
     this.runner = runner;
+    this.voteToHalt = false;
   }
   
   @Override
@@ -41,7 +42,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   
   @Override
   public void voteToHalt() {
-    voteToHalt = false;
+    voteToHalt = true;
   }
   
   boolean hasVotedToHalt() {

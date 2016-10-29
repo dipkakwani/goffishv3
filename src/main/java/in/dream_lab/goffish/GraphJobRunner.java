@@ -82,7 +82,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private HamaConfiguration conf;
   private Map<K, Integer> subgraphPartitionMap;
   private static Class<?> SUBGRAPH_CLASS;
-  //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;  
+  //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
+  private Map<K, List<IMessage<K, M>>> subgraphMessageMap;
   
   @Override
   public final void setup(
@@ -113,6 +114,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     partition = new Partition<S, V, E, I, J, K>(peer.getPeerIndex());
     this.conf = peer.getConfiguration();
     this.subgraphPartitionMap = new HashMap<K, Integer>();
+    this.subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
     /*subgraphClass = (Class<Subgraph<?, ?, ?, ?, ?, ?, ?>>) conf.getClass(
         "hama.subgraph.class", Subgraph.class);
     SUBGRAPH_CLASS = subgraphClass;
@@ -137,6 +139,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
      */
     List<SubgraphCompute<S, V, E, M, I, J, K>> subgraphs=new ArrayList<SubgraphCompute<S, V, E, M, I, J, K>>();
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
+      
+      /* FIXME: Read generic types from configuration and make subgraph object generic. */
       VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
       subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
@@ -150,15 +154,16 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
+      parseMessage(messages);
 
-      /* FIXME: Read generic types from configuration and make subgraph object generic. */
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-        System.out.println("Calling compute "+subgraph.getSubgraph().localVertexCount());
+        System.out.println("Calling compute with vertices"+subgraph.getSubgraph().localVertexCount());
         /*
          * TODO : Clean up the code to call subgraphs that receive
          * message even when halted
          * */
-        if (!subgraph.hasVotedToHalt() || messages.size()>0) {
+        List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
+        if (!subgraph.hasVotedToHalt() || messagesToSubgraph.size()>0) {
           allVotedToHalt = false;
           subgraph.compute(messages);
         }
@@ -174,7 +179,32 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       throws IOException {
     
   }
-  
+
+  void parseMessage(List<IMessage<K, M>> messages) {
+    for (IMessage<K, M> message : messages) {
+      //Broadcase message, therefore every subgraph receives it
+      if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.BROADCAST) {
+        for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
+          List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(subgraph.getSubgraphID());
+          if(subgraphMessage == null) {
+            subgraphMessage = new ArrayList<IMessage<K, M>>();
+          }
+          subgraphMessage.add(message);
+        }
+      }
+      else if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.NORMAL) {
+        List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(message.getSubgraphID());
+        if(subgraphMessage == null) {
+          subgraphMessage = new ArrayList<IMessage<K, M>>();
+        }
+        subgraphMessage.add(message);
+      }
+      /*
+       * TODO: Add implementation for partition message and vertex message(used for graph mutation)
+       */
+    }
+  }
+
   void sendMessage(K subgraphID, M message) {
     //List<Message<K, M>> messages = _messages.get(subgraphID);
     //if (messages == null) {
@@ -192,7 +222,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     }
     //messages.add(msg);
   }
-  
+    
   void sendToVertex(I vertexID, M message) {
     //TODO
   }
