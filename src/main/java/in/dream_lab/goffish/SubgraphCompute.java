@@ -17,6 +17,8 @@
  */
 package in.dream_lab.goffish;
 
+import java.util.Collection;
+
 import org.apache.hadoop.io.Writable;
 
 public abstract class SubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraphCompute<S, V, E, M, I, J, K> {
@@ -73,4 +75,8 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
     runner.sendToNeighbors(subgraph, message);
   }
   
+  @Override
+  public void reduce(Collection<IMessage<K, M>> messages) {
+    voteToHalt();
+  }
 }

@@ -39,7 +39,7 @@ public class ConnectedComponents {
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
 
     Set<Long> remoteSubgraphs;
-    long minSubgraphID = Long.MAX_VALUE;
+    long minSubgraphID = subgraph.getSubgraphID().get();
     
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {

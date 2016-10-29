@@ -177,7 +177,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
-    
+    /*TODO: Call reduce of the application. */
   }
 
   void parseMessage(List<IMessage<K, M>> messages) {
