@@ -31,6 +31,8 @@ public interface ISubgraphCompute <S extends Writable, V extends Writable, E ext
 
   void compute(Collection<IMessage<K, M>> messages);
   
+  void reduce(Collection<IMessage<K, M>> messages);
+  
   void sendMessage(K subgraphID, M message);
   
   void sendToVertex(I vertexID, M message);
