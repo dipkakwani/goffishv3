@@ -36,10 +36,6 @@ public class VertexCount {
   public static class VrtxCnt extends
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
 
-    public VrtxCnt() {
-      // TODO Auto-generated constructor stub
-    }
-
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {

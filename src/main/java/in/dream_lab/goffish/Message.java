@@ -38,20 +38,23 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     this.messageType = IMessage.MessageType.CUSTOM_MESSAGE;
     this.hasSubgraphID = false;
     this.hasMessage = false;
-  }
-  
-  Message(IMessage.MessageType messageType, K subgraphID, M msg) {
-    this.messageType = messageType;
-    this.subgraphID = subgraphID;
-    this.hasSubgraphID = true;
-    this.message = msg;
+    control = new ControlMessage();
   }
   
   Message(IMessage.MessageType messageType, M msg) {
+    this();
     this.messageType = messageType;
-    this.hasSubgraphID = false;
     this.message = msg;
+    this.hasMessage = true;
   }
+  
+  Message(IMessage.MessageType messageType, K subgraphID, M msg) {
+    this(messageType, msg);
+    this.subgraphID = subgraphID;
+    this.hasSubgraphID = true;
+  }
+  
+  
   
   public void setControlInfo(IControlMessage controlMessage) {
     this.control = controlMessage;
@@ -96,6 +99,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    control = new ControlMessage(); 
     control.readFields(in);
     messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
     hasSubgraphID = in.readBoolean();

@@ -33,6 +33,8 @@ public interface ISubgraphCompute <S extends Writable, V extends Writable, E ext
   
   void sendMessage(K subgraphID, M message);
   
+  void sendToVertex(I vertexID, M message);
+  
   void sendToAll(M message); // auto fill subgraph ID on send or receive
   
   void sendToNeighbors(M message);

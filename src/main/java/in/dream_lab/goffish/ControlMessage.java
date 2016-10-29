@@ -29,8 +29,8 @@ import org.apache.hadoop.io.WritableUtils;
 public class ControlMessage implements IControlMessage{
 
   private IControlMessage.TransmissionType transmissionType;
-  private Text vertexValues;
-  private Text generalInfo;
+  private Text vertexValues = new Text("");
+  private Text generalInfo = new Text("");
   private int partitionID;
   
   public ControlMessage() {

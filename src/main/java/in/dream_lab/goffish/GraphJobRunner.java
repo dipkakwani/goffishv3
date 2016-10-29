@@ -112,6 +112,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     this.peer = peer;
     partition = new Partition<S, V, E, I, J, K>(peer.getPeerIndex());
     this.conf = peer.getConfiguration();
+    this.subgraphPartitionMap = new HashMap<K, Integer>();
     /*subgraphClass = (Class<Subgraph<?, ?, ?, ?, ?, ?, ?>>) conf.getClass(
         "hama.subgraph.class", Subgraph.class);
     SUBGRAPH_CLASS = subgraphClass;
@@ -131,9 +132,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     executor.setMaximumPoolSize(64);*/
     System.out.println("BSP method at superstep "+peer.getSuperstepCount());
     
+    /*
+     * Creating SubgraphCompute objects
+     */
     List<SubgraphCompute<S, V, E, M, I, J, K>> subgraphs=new ArrayList<SubgraphCompute<S, V, E, M, I, J, K>>();
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
+      subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
       subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
     }
@@ -186,6 +191,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       e.printStackTrace();
     }
     //messages.add(msg);
+  }
+  
+  void sendToVertex(I vertexID, M message) {
+    //TODO
   }
  
   void sendToNeighbors(ISubgraph<S, V, E, I, J, K> subgraph, M message) {
