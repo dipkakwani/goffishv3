@@ -234,7 +234,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       LongWritable sinkID = new LongWritable(Long.valueOf(msgStringArr[0]));
       for (ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph: partition.getSubgraphs()) {
         IVertex<V, E, LongWritable, LongWritable> v = subgraph.getVertexByID(sinkID);
-        if (v !=null && v.isRemote()==false) {
+        if (v !=null && !v.isRemote()) {
           String reply = sinkID + "," + subgraph.getSubgraphID();
           Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(); 
           ControlMessage controlInfo = new ControlMessage();
@@ -251,14 +251,15 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       String msgString = ((ControlMessage)msg.getControlInfo()).getExtraInfo();
+      //System.out.println("Reply recieved = "+msgString);
       String msgStringArr[] = msgString.split(",");
       LongWritable sinkID = new LongWritable(Long.parseLong(msgStringArr[0]));
       LongWritable remoteSubgraphID = new LongWritable(
           Long.valueOf(msgStringArr[1]));
       for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
-        if (v.getVertexID() == sinkID) {
+        if (v.getVertexID().get() == sinkID.get()) {
           ((RemoteVertex) v).setSubgraphID(remoteSubgraphID);
-          System.out.println(remoteSubgraphID==null);
+          //System.out.println(remoteSubgraphID==null);
         }
       }
     }

@@ -143,8 +143,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
-      VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
-      //ConnectedComponents.CC subgraphComputeRunner = new ConnectedComponents.CC();
+      //VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
+      ConnectedComponents.CC subgraphComputeRunner = new ConnectedComponents.CC();
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
       subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
