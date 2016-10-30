@@ -47,8 +47,12 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
     voteToHalt = true;
   }
   
-  boolean hasVotedToHalt() {
+  public boolean hasVotedToHalt() {
     return voteToHalt;
+  }
+  
+  void resume() {
+    this.voteToHalt = false;
   }
   
   void setSubgraph(ISubgraph<S, V, E, I, J, K> subgraph) {

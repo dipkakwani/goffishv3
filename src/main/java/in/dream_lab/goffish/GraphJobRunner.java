@@ -86,6 +86,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private static Class<?> SUBGRAPH_CLASS;
   //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
   private Map<K, List<IMessage<K, M>>> subgraphMessageMap;
+  List<SubgraphCompute<S, V, E, M, I, J, K>> subgraphs=new ArrayList<SubgraphCompute<S, V, E, M, I, J, K>>();
   
   @Override
   public final void setup(
@@ -139,7 +140,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     /*
      * Creating SubgraphCompute objects
      */
-    List<SubgraphCompute<S, V, E, M, I, J, K>> subgraphs=new ArrayList<SubgraphCompute<S, V, E, M, I, J, K>>();
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
@@ -173,8 +173,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
         if (!subgraph.hasVotedToHalt() || hasMessages) {
           allVotedToHalt = false;
+          subgraph.resume();
           subgraph.compute(messagesToSubgraph);
-          subgraph.reduce(messagesToSubgraph);
         }
       }
       peer.sync();
@@ -187,6 +187,39 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
     /*TODO: Call reduce of the application. */
+    
+    for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
+      subgraph.resume();
+    }
+    
+    boolean allVotedToHalt = false;
+    while (!allVotedToHalt) {
+      allVotedToHalt = true;
+      List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
+      Message<K, M> msg;
+      while ((msg = peer.getCurrentMessage()) != null) {
+        messages.add(msg);
+      }
+      subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
+      parseMessage(messages);
+      for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
+        boolean hasMessages = false;
+        List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
+        if (messagesToSubgraph != null) {
+          hasMessages = true;
+        }
+        if (!subgraph.hasVotedToHalt() || hasMessages) {
+          allVotedToHalt = false;
+          subgraph.reduce(messagesToSubgraph);
+        }
+      }
+      try {
+        peer.sync();
+      } catch (SyncException | InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
   }
 
   void parseMessage(List<IMessage<K, M>> messages) {

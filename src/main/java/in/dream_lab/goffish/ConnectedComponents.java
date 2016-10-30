@@ -84,6 +84,7 @@ public class ConnectedComponents {
     @Override
     public void reduce(Collection<IMessage<LongWritable,LongWritable>> messages) {
       System.out.println("Subgraph " + subgraph.getSubgraphID() + " value " + subgraph.getValue());
+      voteToHalt();
     }
   
   
