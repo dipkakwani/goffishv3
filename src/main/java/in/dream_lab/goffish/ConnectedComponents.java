@@ -39,14 +39,15 @@ public class ConnectedComponents {
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
 
     Set<Long> remoteSubgraphs;
-    long minSubgraphID = subgraph.getSubgraphID().get();
+    long minSubgraphID;
     
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
+        minSubgraphID = subgraph.getSubgraphID().get();
         remoteSubgraphs = new HashSet<Long>();
         for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : subgraph.getRemoteVertices()) {
-            if (!remoteSubgraphs.contains(vertex.getSubgraphID().get())) {
+          if (!remoteSubgraphs.contains(vertex.getSubgraphID().get())) {
               remoteSubgraphs.add(vertex.getSubgraphID().get());
             }
             if (minSubgraphID > vertex.getSubgraphID().get()) {

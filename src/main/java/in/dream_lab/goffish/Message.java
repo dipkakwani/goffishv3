@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
@@ -29,7 +30,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   private K subgraphID;
   //private int partitionID;
   private boolean hasSubgraphID;
-  private boolean hasMessage = true;
+  private boolean hasMessage;
   
   private M message;
   private IControlMessage control;
@@ -80,7 +81,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
 
   @Override
   public M getMessage() {
-    return null;
+    return message;
   }
 
   @Override
@@ -108,6 +109,8 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     }
     hasMessage = in.readBoolean();
     if (hasMessage) {
+      //use reflectionUtils to instatiate message
+      this.message = (M)new LongWritable();
       message.readFields(in);
     }    
   }

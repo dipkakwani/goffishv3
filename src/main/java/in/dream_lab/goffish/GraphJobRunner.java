@@ -64,6 +64,8 @@ import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
 import org.apache.hama.util.WritableUtils;
 
+import com.sun.tools.internal.xjc.reader.gbind.ConnectedComponent;
+
 /**
  * Fully generic graph job runner.
  * 
@@ -142,8 +144,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
       VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
-      subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
+      //ConnectedComponents.CC subgraphComputeRunner = new ConnectedComponents.CC();
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
+      subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
     }
     boolean allVotedToHalt = false;
@@ -154,6 +157,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
+      subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       parseMessage(messages);
 
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
@@ -162,10 +166,15 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
          * TODO : Clean up the code to call subgraphs that receive
          * message even when halted
          * */
+        boolean hasMessages = false;
         List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
-        if (!subgraph.hasVotedToHalt() || messagesToSubgraph.size()>0) {
+        if (messagesToSubgraph != null) {
+          hasMessages = true;
+        }
+        if (!subgraph.hasVotedToHalt() || hasMessages) {
           allVotedToHalt = false;
-          subgraph.compute(messages);
+          subgraph.compute(messagesToSubgraph);
+          subgraph.reduce(messagesToSubgraph);
         }
       }
       peer.sync();
@@ -188,6 +197,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
           List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(subgraph.getSubgraphID());
           if(subgraphMessage == null) {
             subgraphMessage = new ArrayList<IMessage<K, M>>();
+            subgraphMessageMap.put(subgraph.getSubgraphID(), subgraphMessage);
           }
           subgraphMessage.add(message);
         }
