@@ -105,6 +105,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     messageType = WritableUtils.readEnum(in, IMessage.MessageType.class);
     hasSubgraphID = in.readBoolean();
     if (hasSubgraphID) {
+      this.subgraphID = (K)new LongWritable();
       subgraphID.readFields(in);
     }
     hasMessage = in.readBoolean();

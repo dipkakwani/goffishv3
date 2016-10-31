@@ -114,6 +114,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     System.out.println("Partition 0 " + partitionMap.containsKey(new IntWritable(0)));
 
     System.out.println("Partition 1 " + partitionMap.containsKey(1));
+    List<IEdge<E, LongWritable, LongWritable>> _edges = new ArrayList<IEdge<E, LongWritable, LongWritable>>();
     // Send vertices to their respective partitions.
     for (Map.Entry<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> entry : partitionMap.entrySet()) {  
       if (entry.getKey().get() != peer.getPeerIndex()) {
@@ -137,6 +138,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         _vertices.addAll(entry.getValue());
         for (Vertex<V, E, LongWritable, LongWritable> v : entry.getValue()) {
           vertexMap.put(v.getVertexID(), v);
+          _edges.addAll(v.outEdges());
         }
       }
     }
@@ -146,7 +148,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     // End of first superstep.
     peer.sync();
     Message<LongWritable, LongWritable> msg;
-    List<Edge<E, LongWritable, LongWritable>> _edges = new ArrayList<Edge<E, LongWritable, LongWritable>>();
+//    List<Edge<E, LongWritable, LongWritable>> _edges = new ArrayList<Edge<E, LongWritable, LongWritable>>();
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       System.out.println("Recieved some vertices");
       String msgString = msg.getControlInfo().toString();
@@ -172,7 +174,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
 
     System.out.println("After receiving vertices size " + _vertices.size()+"=size="+vertexMap.size());
     /* Create remote vertex objects. */
-    for (Edge<E, LongWritable, LongWritable> e : _edges) {
+    for (IEdge<E, LongWritable, LongWritable> e : _edges) {
       LongWritable sinkID = e.getSinkVertexID();
       IVertex<V, E, LongWritable, LongWritable> sink =  vertexMap.get(sinkID);
       if (sink == null) {
@@ -288,6 +290,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           }
           visited.add(vertexID);
           IVertex<V, E, LongWritable, LongWritable> source = vertexMap.get(vertexID);
+          //System.out.println(vertexID+ " "+source.isRemote());
           subgraph.addVertex(source);
           if (source.outEdges() == null) {
             //remote vertex
