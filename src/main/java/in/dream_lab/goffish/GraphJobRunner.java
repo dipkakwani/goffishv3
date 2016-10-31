@@ -64,8 +64,6 @@ import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
 import org.apache.hama.util.WritableUtils;
 
-import com.sun.tools.internal.xjc.reader.gbind.ConnectedComponent;
-
 /**
  * Fully generic graph job runner.
  * 
@@ -162,10 +160,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
 
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
         System.out.println("Calling compute with vertices"+subgraph.getSubgraph().localVertexCount());
-        /*
-         * TODO : Clean up the code to call subgraphs that receive
-         * message even when halted
-         * */
         boolean hasMessages = false;
         List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
         if (messagesToSubgraph != null) {
@@ -186,8 +180,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
-    /*TODO: Call reduce of the application. */
-    
+    System.out.println("Clean up!");
     for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
       subgraph.resume();
     }
@@ -210,6 +203,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
         if (!subgraph.hasVotedToHalt() || hasMessages) {
           allVotedToHalt = false;
+          System.out.println("Calling Reduce!");
           subgraph.reduce(messagesToSubgraph);
         }
       }
@@ -224,7 +218,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
 
   void parseMessage(List<IMessage<K, M>> messages) {
     for (IMessage<K, M> message : messages) {
-      //Broadcase message, therefore every subgraph receives it
+      //Broadcast message, therefore every subgraph receives it
       if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.BROADCAST) {
         for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
           List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(subgraph.getSubgraphID());
@@ -249,10 +243,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   }
 
   void sendMessage(K subgraphID, M message) {
-    //List<Message<K, M>> messages = _messages.get(subgraphID);
-    //if (messages == null) {
-    //  messages = new ArrayList<Message<K, M>>();
-    //}
     Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, subgraphID, message);
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.NORMAL);
@@ -263,7 +253,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
-    //messages.add(msg);
   }
     
   void sendToVertex(I vertexID, M message) {
@@ -286,7 +275,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
     msg.setControlInfo(controlInfo);
-    //_broadcastMessages.add(msg);
     for (String peerName : peer.getAllPeerNames()) {
       try {
         peer.send(peerName, msg);
@@ -298,7 +286,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   }
   
   long getSuperStepCount() {
-    return peer.getSuperstepCount()-INITIALIZATION_SUPERSTEPS;
+    return peer.getSuperstepCount() - INITIALIZATION_SUPERSTEPS;
   }
   
   int getPartitionID(K subgraphID) {
