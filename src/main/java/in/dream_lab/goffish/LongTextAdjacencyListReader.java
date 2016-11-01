@@ -258,6 +258,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       LongWritable sinkID = new LongWritable(Long.parseLong(msgStringArr[0]));
       LongWritable remoteSubgraphID = new LongWritable(
           Long.valueOf(msgStringArr[1]));
+      //TODO: Why not use the map instead?
       for (IVertex<V, E, LongWritable, LongWritable> v : _vertices) {
         if (v.getVertexID().get() == sinkID.get()) {
           ((RemoteVertex) v).setSubgraphID(remoteSubgraphID);
@@ -276,12 +277,13 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     System.out.println(" Size " + vertices.size()+ "=size=" + vertexMap.size());
     
     for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
-      if (!visited.contains(v.getVertexID())) {
+      if (!visited.contains(v.getVertexID()) && !v.isRemote()) {
         LongWritable subgraphID = new LongWritable(subgraphCount++ | (((long) partition.getPartitionID()) << 32));
         Subgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph = new Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex(), subgraphID);
         //BFS
         Queue<LongWritable> Q = new LinkedList<LongWritable>();
         Q.add(v.getVertexID());
+        System.out.println("Starting vertex for BFS " + v.getVertexID());
         //subgraph.addVertex(v);
         while (!Q.isEmpty()) {
           LongWritable vertexID = Q.poll();
@@ -292,9 +294,12 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           IVertex<V, E, LongWritable, LongWritable> source = vertexMap.get(vertexID);
           //System.out.println(vertexID+ " "+source.isRemote());
           subgraph.addVertex(source);
-          if (source.outEdges() == null) {
+          if (source.isRemote()) {
             //remote vertex
             continue;
+          }
+          if (vertexID.get() == 350) {
+            System.out.println("Found 350 !");
           }
           for (IEdge<E, LongWritable, LongWritable> e : source.outEdges()) {
             LongWritable sinkID = e.getSinkVertexID();
@@ -317,7 +322,13 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         }
         
         System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
-            + subgraph.vertexCount() + "Vertices");
+            + subgraph.vertexCount() + " Vertices");
+        /*
+        System.out.println("Vertices");
+        for (IVertex<V, E, LongWritable, LongWritable> vertex : subgraph.getVertices()) {
+          System.out.print(vertex.getVertexID() + " ");
+        }
+        System.out.println();*/
       }
     }
   }

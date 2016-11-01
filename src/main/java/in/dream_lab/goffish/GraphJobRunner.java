@@ -155,7 +155,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
-      System.out.println(messages.size()+"Messages");
+      System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       parseMessage(messages);
 
@@ -168,7 +168,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
         if (!subgraph.hasVotedToHalt() || hasMessages) {
           allVotedToHalt = false;
-          System.out.println("Computing");
+          if (hasMessages)
+            System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " messages " + messagesToSubgraph.size());
+          else
+            System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " 0 messages ");
           subgraph.resume();
           subgraph.compute(messagesToSubgraph);
         }
@@ -205,6 +208,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
         if (!subgraph.hasVotedToHalt() || hasMessages) {
           allVotedToHalt = false;
+          subgraph.resume();
           System.out.println("Calling Reduce!");
           subgraph.reduce(messagesToSubgraph);
         }

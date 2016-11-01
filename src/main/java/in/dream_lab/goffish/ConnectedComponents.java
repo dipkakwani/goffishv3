@@ -55,10 +55,8 @@ public class ConnectedComponents {
             minSubgraphID = vertex.getSubgraphID().get();
           }
         }
-        //if (minSubgraphID != subgraph.getSubgraphID().get()) {
         LongWritable msg = new LongWritable(minSubgraphID);
         sendToNeighbors(msg);
-        //}
         subgraph.setValue(new LongWritable(minSubgraphID));
       } else {
         boolean updated = false;
@@ -74,6 +72,7 @@ public class ConnectedComponents {
           LongWritable msg = new LongWritable(minSubgraphID);
           sendToNeighbors(msg);
         }
+        System.out.println("Superstep "+ getSuperStep() + " Subgraph " + subgraph.getSubgraphID() + " value " + subgraph.getValue());
       }
       voteToHalt();
     }
