@@ -46,20 +46,19 @@ public class ConnectedComponents {
       if (getSuperStep() == 0) {
         minSubgraphID = subgraph.getSubgraphID().get();
         remoteSubgraphs = new HashSet<Long>();
-        for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : subgraph.getRemoteVertices()) {
+        for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : subgraph
+            .getRemoteVertices()) {
           if (!remoteSubgraphs.contains(vertex.getSubgraphID().get())) {
-              remoteSubgraphs.add(vertex.getSubgraphID().get());
-            }
-            if (minSubgraphID > vertex.getSubgraphID().get()) {
-              minSubgraphID = vertex.getSubgraphID().get();
-            }
-        }
-        if (minSubgraphID != subgraph.getSubgraphID().get()) {
-          LongWritable msg = new LongWritable(minSubgraphID);
-          for (Long subgraphID : remoteSubgraphs) {
-            sendMessage(new LongWritable(subgraphID), msg);
+            remoteSubgraphs.add(vertex.getSubgraphID().get());
+          }
+          if (minSubgraphID > vertex.getSubgraphID().get()) {
+            minSubgraphID = vertex.getSubgraphID().get();
           }
         }
+        //if (minSubgraphID != subgraph.getSubgraphID().get()) {
+        LongWritable msg = new LongWritable(minSubgraphID);
+        sendToNeighbors(msg);
+        //}
         subgraph.setValue(new LongWritable(minSubgraphID));
       } else {
         boolean updated = false;
@@ -73,9 +72,7 @@ public class ConnectedComponents {
         if (updated) {
           subgraph.setValue(new LongWritable(minSubgraphID));
           LongWritable msg = new LongWritable(minSubgraphID);
-          for (Long subgraphID : remoteSubgraphs) {
-            sendMessage(new LongWritable(subgraphID), msg);
-          }
+          sendToNeighbors(msg);
         }
       }
       voteToHalt();
