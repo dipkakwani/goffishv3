@@ -24,7 +24,9 @@ public interface IControlMessage extends Writable {
     NORMAL,
     BROADCAST,
     PARTITION,
-    VERTEX
+    VERTEX,
+    HEARTBEAT,
+    GLOBAL_HALT
   }
   
   TransmissionType getTransmissionType();

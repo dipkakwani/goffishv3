@@ -38,19 +38,14 @@ public class ConnectedComponents {
   public static class CC extends
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
 
-    Set<Long> remoteSubgraphs;
     long minSubgraphID;
     
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
-        minSubgraphID = subgraph.getSubgraphID().get();
-        remoteSubgraphs = new HashSet<Long>();
+        minSubgraphID = subgraph.getSubgraphID().get();       
         for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : subgraph
             .getRemoteVertices()) {
-          if (!remoteSubgraphs.contains(vertex.getSubgraphID().get())) {
-            remoteSubgraphs.add(vertex.getSubgraphID().get());
-          }
           if (minSubgraphID > vertex.getSubgraphID().get()) {
             minSubgraphID = vertex.getSubgraphID().get();
           }
@@ -74,12 +69,7 @@ public class ConnectedComponents {
         }
         System.out.println("Superstep "+ getSuperStep() + " Subgraph " + subgraph.getSubgraphID() + " value " + subgraph.getValue());
       }
-      voteToHalt();
-    }
-    
-    @Override
-    public void reduce(Collection<IMessage<LongWritable,LongWritable>> messages) {
-      System.out.println("Subgraph " + subgraph.getSubgraphID() + " value " + subgraph.getValue());
+      System.out.println("Subgraph " + subgraph.getSubgraphID() + " in superstep " + getSuperStep() + " value " + subgraph.getValue());
       voteToHalt();
     }
   

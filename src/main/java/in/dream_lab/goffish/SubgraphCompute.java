@@ -78,9 +78,4 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
   public void sendToNeighbors(M message) {
     runner.sendToNeighbors(subgraph, message);
   }
-  
-  @Override
-  public void reduce(Collection<IMessage<K, M>> messages) {
-    voteToHalt();
-  }
 }
