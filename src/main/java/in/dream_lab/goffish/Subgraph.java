@@ -20,6 +20,7 @@ package in.dream_lab.goffish;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.io.IntWritable;
@@ -32,10 +33,10 @@ import org.apache.hama.bsp.BSPPeer;
 public class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
   private static final long INITIALISATION_SUPERSTEPS = 3;
   K subgraphID;
-  private List<IVertex<V, E, I, J>> _vertices;
-  private Map<I, IVertex<V, E, I, J>> _verticesID;
+  //private List<IVertex<V, E, I, J>> _vertices;
+  private Map<I, IVertex<V, E, I, J>> _vertexMap;
   //private List<IVertex<V, E, I, J>> _localVertices;
-  private List<IRemoteVertex<V, E, I, J, K>> _remoteVertices;
+  //private List<IRemoteVertex<V, E, I, J, K>> _remoteVertices;
   private List<IEdge<E, I, J>> _edges; 
   //BSPPeer<Writable, Writable, Writable, Writable, Text> peer;
   int partitionID;
@@ -45,24 +46,24 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
   Subgraph(int partitionID, K subgraphID) {
     this.partitionID = partitionID;
     this.subgraphID = subgraphID;
-    _vertices = new ArrayList<IVertex<V, E, I, J>>();
+    //_vertices = new ArrayList<IVertex<V, E, I, J>>();
     //_localVertices = new ArrayList<IVertex<V, E, I, J>>();
-    _remoteVertices = new ArrayList<IRemoteVertex<V, E, I, J, K>>();
-    _verticesID = new HashMap<I, IVertex<V, E, I, J>>();
+    //_remoteVertices = new ArrayList<IRemoteVertex<V, E, I, J, K>>();
+    _vertexMap = new HashMap<I, IVertex<V, E, I, J>>();
     _edges = new ArrayList<IEdge<E, I, J>>();
   }
 
   void addVertex(IVertex<V, E, I, J> v) {
-    _vertices.add(v);
-    if (v.isRemote()) {
-      _remoteVertices.add((IRemoteVertex<V, E, I, J, K>)v);
-    }
-    _verticesID.put(v.getVertexID(), v);
+    //_vertices.add(v);
+    //if (v.isRemote()) {
+    //  _remoteVertices.add((IRemoteVertex<V, E, I, J, K>)v);
+    //}
+    _vertexMap.put(v.getVertexID(), v);
   }
   
   @Override
   public IVertex<V, E, I, J> getVertexByID(I vertexID) {
-    return _verticesID.get(vertexID);
+    return _vertexMap.get(vertexID);
   }
   
   void addEdge(IEdge<E, I, J> e) {
@@ -76,24 +77,28 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
 
   @Override
   public long vertexCount() {
-    return _vertices.size();
+    return _vertexMap.size();
   }
   
   @Override
   public long localVertexCount() {
-    return _vertices.size() - _remoteVertices.size();
+    long localVertexCount = 0;
+    for (IVertex<V, E, I, J> v : _vertexMap.values())
+      if (!v.isRemote())
+        localVertexCount++;
+    return localVertexCount;
   }
 
   @Override
-  public List<IVertex<V, E, I, J>> getVertices() {
-    return _vertices;
+  public Iterable<IVertex<V, E, I, J>> getVertices() {
+    return _vertexMap.values();
   }
   
   /* Avoid using this function as it is inefficient. */
   @Override
-  public List<IVertex<V, E, I, J>> getLocalVertices() {
+  public Iterable<IVertex<V, E, I, J>> getLocalVertices() {
     List<IVertex<V, E, I, J>> localVertices = new ArrayList<IVertex<V, E, I, J>>();
-    for (IVertex<V, E, I, J> v : _vertices)
+    for (IVertex<V, E, I, J> v : _vertexMap.values())
       if (!v.isRemote())
         localVertices.add(v);
     return localVertices;
@@ -108,10 +113,13 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
   public S getValue() {
     return _value; 
   }
-  //public abstract void compute(List<Text> messages);
-
+  
   @Override
-  public List<IRemoteVertex<V, E, I, J, K>> getRemoteVertices() {
-    return _remoteVertices;
+  public Iterable<IRemoteVertex<V, E, I, J, K>> getRemoteVertices() {
+    List<IRemoteVertex<V, E, I, J, K>> remoteVertices = new ArrayList<IRemoteVertex<V, E, I, J, K>>();
+    for (IVertex<V, E, I, J> v : _vertexMap.values())
+      if (v.isRemote())
+        remoteVertices.add((IRemoteVertex<V, E, I, J, K>)v);
+    return remoteVertices;
   }
 }
