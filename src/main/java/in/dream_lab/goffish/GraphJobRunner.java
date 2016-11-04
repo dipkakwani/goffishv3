@@ -163,7 +163,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
       System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
-      globalVoteToHalt = (isMasterTask(peer)) ? true : false;
+      globalVoteToHalt = (isMasterTask(peer) && peer.getSuperstepCount() == INITIALIZATION_SUPERSTEPS) ? true : false;
       allVotedToHalt = true;
       parseMessage(messages);
       
@@ -263,7 +263,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   void parseHeartBeat(IMessage<K, M> message) {
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
     String hearBeat = content.getExtraInfo();
-    if (!hearBeat.equals("00"))
+    if (!hearBeat.equals("10"))
       globalVoteToHalt = false;
   }
 
@@ -286,6 +286,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
+    }
+  }
+ 
+  /* Sends message to all the peers. */
+  void sendToAll(Message<K, M> message) {
+    for (String peerName : peer.getAllPeerNames()) {
+      sendMessage(peerName, message);
     }
   }
   
@@ -317,9 +324,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
     msg.setControlInfo(controlInfo);
-    for (String peerName : peer.getAllPeerNames()) {
-      sendMessage(peerName, msg);
-    }
+    sendToAll(msg);
   }
   
   long getSuperStepCount() {
@@ -338,8 +343,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.GLOBAL_HALT);
     msg.setControlInfo(controlInfo);
-    for (String peerName : peer.getAllPeerNames()) {
-      sendMessage(peerName, msg);
-    }
+    sendToAll(msg);
   }
 }
