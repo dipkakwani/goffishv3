@@ -18,6 +18,9 @@
 package in.dream_lab.goffish;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.hadoop.io.Writable;
 
 /*TODO: Add IWCSubgraph and ISCSubgraph
@@ -36,11 +39,11 @@ public interface ISubgraph<S extends Writable, V extends Writable, E extends Wri
   
   long localVertexCount();
 
-  Collection<IVertex<V, E, I, J>> getVertices();
+  Iterable<IVertex<V, E, I, J>> getVertices();
   
-  Collection<IVertex<V, E, I, J>> getLocalVertices();
+  Iterable<IVertex<V, E, I, J>> getLocalVertices();
   
-  Collection<IRemoteVertex<V, E, I, J, K>> getRemoteVertices();
+  Iterable<IRemoteVertex<V, E, I, J, K>> getRemoteVertices();
   
   void setValue(S value);
   
