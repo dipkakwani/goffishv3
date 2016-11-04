@@ -19,20 +19,13 @@ package in.dream_lab.goffish;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
-
-import in.dream_lab.goffish.IMessage.MessageType;
 
 public class ConnectedComponents {
   public static class CC extends
