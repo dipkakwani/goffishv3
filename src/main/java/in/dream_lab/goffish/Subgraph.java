@@ -39,7 +39,9 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
 
   void addVertex(IVertex<V, E, I, J> v) {
     _vertexMap.put(v.getVertexID(), v);
-    _edges.addAll(v.outEdges());
+    if (v.outEdges() != null) {
+      _edges.addAll(v.outEdges());
+    }
   }
   
   @Override

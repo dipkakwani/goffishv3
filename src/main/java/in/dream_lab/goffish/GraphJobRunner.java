@@ -165,6 +165,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
+      messageInFlight = false;
       parseMessage(messages);
       
       if (globalVoteToHalt && isMasterTask(peer)) {
@@ -193,7 +194,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
           if (!subgraph.hasVotedToHalt())
             allVotedToHalt = false;
         }
-      }      
+      }
       sendHeartBeat();
       
       peer.sync();
@@ -205,6 +206,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
+    System.out.println("Clean up!");
+    for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph: subgraphs) {
+      System.out.println(subgraph.getSubgraph().getValue());
+    }
   }
   
   /* Each peer sends heart beat to the master, which indicates if all the subgraphs has voted
@@ -217,12 +222,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     String messageInFlightMsg = (messageInFlight) ? "1" : "0";
     controlInfo.setextraInfo(allVotedToHaltMsg + messageInFlightMsg);
     msg.setControlInfo(controlInfo);
-    try {
-      peer.send(peer.getPeerName(getMasterTaskIndex()), msg);
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
+    sendMessage(peer.getPeerName(getMasterTaskIndex()), msg);
   }
   
   void parseMessage(List<IMessage<K, M>> messages) {
@@ -262,8 +262,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   /* Sets global vote to halt to false if any of the peer is still active. */
   void parseHeartBeat(IMessage<K, M> message) {
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
-    String hearBeat = content.getExtraInfo();
-    if (!hearBeat.equals("10"))
+    String heartBeat = content.getExtraInfo();
+    System.out.println("Heartbeat = "+ heartBeat);
+    if (!heartBeat.equals("10"))
       globalVoteToHalt = false;
   }
 
@@ -282,7 +283,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   void sendMessage(String peerName, Message<K, M> message) {
     try {
       peer.send(peerName, message);
-      messageInFlight = true;
+      if(message.getControlInfo().getTransmissionType() != IControlMessage.TransmissionType.HEARTBEAT) {
+        messageInFlight = true;
+      }
     } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
