@@ -2,9 +2,14 @@ package in.dream_lab.goffish;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
@@ -103,8 +108,83 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
         vertexMap.put(sinkID, sink);
       }
     }
+    
+    //Direct Copy paste from here
+    Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition = new Partition<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex());
+    
+    formSubgraphs(partition, vertexMap.values());
+    
+    /*
+     * Ask Remote vertices to send their subgraph IDs. Requires 2 supersteps
+     * because the graph is directed
+     */
+    for (IVertex<V, E, LongWritable, LongWritable> v : vertexMap.values()) {
+      if (v instanceof RemoteVertex) {
+        String s = v.getVertexID() + "," + peer.getPeerIndex();
+        for (String peerName : peer.getAllPeerNames()) {
+          Message<LongWritable, LongWritable> question = new Message<LongWritable, LongWritable>();
+          ControlMessage controlInfo = new ControlMessage();
+          controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+          controlInfo.setextraInfo(s);
+          question.setControlInfo(controlInfo);
+          peer.send(peerName, (Message<K, M>)question);
+        }
+      }
+    }
+
+    peer.sync();
+
+    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+      /*
+       * Subgraph Partition mapping broadcast
+       */
+      if (msg.getMessageType() == Message.MessageType.SUBGRAPH) {
+        String msgString = ((ControlMessage)msg.getControlInfo()).getExtraInfo();
+        System.out.println(msgString+"Subgraph Broadcast recieved");
+        String msgStringArr[] = msgString.split(",");
+        subgraphPartitionMap.put((K)new LongWritable(Long.valueOf(msgStringArr[1])), Integer.valueOf(msgStringArr[0]));
+        continue;
+      }
+      /*
+       * receiving query to find subgraph id Remote Vertex
+       */
+      String msgString = ((ControlMessage)msg.getControlInfo()).getExtraInfo();
+      String msgStringArr[] = msgString.split(",");
+      LongWritable sinkID = new LongWritable(Long.valueOf(msgStringArr[0]));
+      for (ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph: partition.getSubgraphs()) {
+        IVertex<V, E, LongWritable, LongWritable> v = subgraph.getVertexByID(sinkID);
+        if (v !=null && !v.isRemote()) {
+          String reply = sinkID + "," + subgraph.getSubgraphID();
+          Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(); 
+          ControlMessage controlInfo = new ControlMessage();
+          controlInfo.setTransmissionType(IControlMessage.TransmissionType.NORMAL);
+          controlInfo.setextraInfo(reply);
+          subgraphIDReply.setControlInfo(controlInfo);
+          peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),(Message<K, M>)subgraphIDReply);
+        }
+      }
+    }
+    
+    peer.sync();
+    System.out.println("Messages to all neighbours sent");
+    
+    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
+      String msgString = ((ControlMessage)msg.getControlInfo()).getExtraInfo();
+      //System.out.println("Reply recieved = "+msgString);
+      String msgStringArr[] = msgString.split(",");
+      LongWritable sinkID = new LongWritable(Long.parseLong(msgStringArr[0]));
+      LongWritable remoteSubgraphID = new LongWritable(
+          Long.valueOf(msgStringArr[1]));
+      for (IVertex<V, E, LongWritable, LongWritable> v : vertexMap.values()) {
+        if (v.getVertexID().get() == sinkID.get()) {
+          ((RemoteVertex) v).setSubgraphID(remoteSubgraphID);
+        }
+      }
+    }
+
+    return partition.getSubgraphs();
     //TODO
-    return null;
+    //return null;
   }
   
   @SuppressWarnings("unchecked")
@@ -134,6 +214,59 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
       vertex.addEdge(edge);
     }
     return vertex;
+  }
+  
+  /* Forms subgraphs by finding (weakly) connected components. */
+  void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, Collection<IVertex<V, E, LongWritable, LongWritable>> vertices) throws IOException {
+    long subgraphCount = 0;
+    Set<LongWritable> visited = new HashSet<LongWritable>();  
+    System.out.println(" Size " + vertices.size()+ "=size=" + vertexMap.size());
+    
+    for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
+      if (!visited.contains(v.getVertexID()) && !v.isRemote()) {
+        LongWritable subgraphID = new LongWritable(subgraphCount++ | (((long) partition.getPartitionID()) << 32));
+        Subgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph = new Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex(), subgraphID);
+        //BFS
+        Queue<LongWritable> Q = new LinkedList<LongWritable>();
+        Q.add(v.getVertexID());
+        System.out.println("Starting vertex for BFS " + v.getVertexID());
+        while (!Q.isEmpty()) {
+          LongWritable vertexID = Q.poll();
+          if(visited.contains(vertexID)) {
+            continue;
+          }
+          visited.add(vertexID);
+          IVertex<V, E, LongWritable, LongWritable> source = vertexMap.get(vertexID);
+          //System.out.println(vertexID+ " "+source.isRemote());
+          subgraph.addVertex(source);
+          if (source.isRemote()) {
+            //remote vertex
+            continue;
+          }
+          for (IEdge<E, LongWritable, LongWritable> e : source.outEdges()) {
+            LongWritable sinkID = e.getSinkVertexID();
+            if (!visited.contains(sinkID)) {
+              Q.add(sinkID);
+            }
+          }
+        }
+        partition.addSubgraph(subgraph);
+        String msg = peer.getPeerIndex() + "," + subgraphID.toString();
+        Message<LongWritable, LongWritable> subgraphLocationBroadcast = new Message<LongWritable, LongWritable>();
+        subgraphLocationBroadcast.setMessageType(IMessage.MessageType.SUBGRAPH);
+        ControlMessage controlInfo = new ControlMessage();
+        controlInfo
+            .setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+        controlInfo.setextraInfo(msg);
+        subgraphLocationBroadcast.setControlInfo(controlInfo);
+        for (String peerName : peer.getAllPeerNames()) {
+          peer.send(peerName, (Message<K, M>) subgraphLocationBroadcast);
+        }
+
+        System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
+            + subgraph.vertexCount() + " Vertices");
+      }
+    }
   }
 
 }
