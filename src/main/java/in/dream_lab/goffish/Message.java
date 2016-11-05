@@ -28,7 +28,6 @@ import org.apache.hadoop.io.WritableUtils;
 public class Message<K extends Writable, M extends Writable> implements IMessage<K, M> {
   private IMessage.MessageType messageType;
   private K subgraphID;
-  //private int partitionID;
   private boolean hasSubgraphID;
   private boolean hasMessage;
   

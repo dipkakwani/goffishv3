@@ -163,7 +163,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
       System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
-      globalVoteToHalt = (isMasterTask(peer) && peer.getSuperstepCount() != INITIALIZATION_SUPERSTEPS) ? true : false;
+      globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
       parseMessage(messages);
       

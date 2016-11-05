@@ -17,8 +17,6 @@
  */
 package in.dream_lab.goffish;
 
-import java.util.Collection;
-
 import org.apache.hadoop.io.Writable;
 
 /* Defines remote vertex interface.
