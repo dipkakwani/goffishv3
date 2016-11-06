@@ -23,7 +23,7 @@ import org.apache.hadoop.io.Writable;
 
 public interface ISubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> {
   
-  ISubgraph<S, V, E, I, J, K> getSubgraph();
+  ISubgraph<S, V, E, I, J, K> getSubgraph();//templatize return type, G extends ISubgraph<S, V, E, I, J, K>
   
   void voteToHalt();
 
