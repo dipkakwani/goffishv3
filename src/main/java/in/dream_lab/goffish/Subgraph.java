@@ -23,15 +23,13 @@ import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.io.Writable;
 
-import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.IVertex;
 
 public class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
   K subgraphID;
-  private Map<I, IVertex<V, E, I, J>> _vertexMap;
-  private List<IEdge<E, I, J>> _edges; 
+  private Map<I, IVertex<V, E, I, J>> _vertexMap; 
   int partitionID;
   S _value;
   
@@ -39,14 +37,10 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
     this.partitionID = partitionID;
     this.subgraphID = subgraphID;
     _vertexMap = new HashMap<I, IVertex<V, E, I, J>>();
-    _edges = new ArrayList<IEdge<E, I, J>>();
   }
 
   void addVertex(IVertex<V, E, I, J> v) {
     _vertexMap.put(v.getVertexID(), v);
-    if (v.outEdges() != null) {
-      _edges.addAll(v.outEdges());
-    }
   }
   
   @Override

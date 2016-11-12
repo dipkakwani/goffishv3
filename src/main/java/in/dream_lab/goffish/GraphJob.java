@@ -37,15 +37,19 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
 
 import com.google.common.base.Preconditions;
 
+import in.dream_lab.goffish.api.ISubgraph;
+
 public class GraphJob extends BSPJob {
   
-  public final static String VERTEX_CLASS_ATTR = "hama.subgraph.class";
+  public final static String VERTEX_CLASS_ATTR = "hama.subgraphcompute.class";
+  public final static String SUBGRAPH_CLASS_ATTR = "hama.subgraph.class";
   
   public GraphJob(HamaConfiguration conf, Class<? extends SubgraphCompute> exampleClass)
       throws IOException {
     super(conf); 
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);
     conf.setBoolean("hama.use.unsafeserialization", true);
+    conf.setClass(SUBGRAPH_CLASS_ATTR, Subgraph.class, ISubgraph.class);;
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setPartitioner(HashPartitioner.class);
@@ -57,6 +61,15 @@ public class GraphJob extends BSPJob {
   public void setPartitioner(
       @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
+  }
+  
+  /*
+   * Use RicherSubgraph Class instead of Subgraph for more features
+   */
+  public void useRicherSubgraph(boolean use) {
+    if(use) {
+      conf.setClass(SUBGRAPH_CLASS_ATTR, RicherSubgraph.class, ISubgraph.class);
+    }
   }
   
   /**
@@ -78,10 +91,10 @@ public class GraphJob extends BSPJob {
     conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
         IReader.class);
   }
-  
+
   public void setMaxIteration(int maxIteration) {
-	    conf.setInt("hama.graph.max.iteration", maxIteration);
-	}
+    conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
 
   @Override
   public void submit() throws IOException, InterruptedException {
