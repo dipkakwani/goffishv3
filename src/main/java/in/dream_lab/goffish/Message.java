@@ -26,6 +26,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 import in.dream_lab.goffish.api.IMessage;
+import in.dream_lab.goffish.humus.api.IControlMessage;
 
 public class Message<K extends Writable, M extends Writable> implements IMessage<K, M> {
   private IMessage.MessageType messageType;

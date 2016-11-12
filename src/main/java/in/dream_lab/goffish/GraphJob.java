@@ -38,6 +38,7 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
 import com.google.common.base.Preconditions;
 
 import in.dream_lab.goffish.api.ISubgraph;
+import in.dream_lab.goffish.humus.api.IReader;
 
 public class GraphJob extends BSPJob {
   

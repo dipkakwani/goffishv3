@@ -26,6 +26,8 @@ import java.io.IOException;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 
+import in.dream_lab.goffish.humus.api.IControlMessage;
+
 public class ControlMessage implements IControlMessage{
 
   private IControlMessage.TransmissionType transmissionType;

@@ -62,6 +62,8 @@ import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.ISubgraphCompute;
+import in.dream_lab.goffish.humus.api.IControlMessage;
+import in.dream_lab.goffish.humus.api.IReader;
 
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
@@ -212,13 +214,16 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
     System.out.println("Clean up!");
-    for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph: subgraphs) {
+    for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
       System.out.println(subgraph.getSubgraph().getValue());
     }
   }
-  
-  /* Each peer sends heart beat to the master, which indicates if all the subgraphs has voted
-   * to halt and there is no message which is being sent in the current superstep. */
+
+  /*
+   * Each peer sends heart beat to the master, which indicates if all the
+   * subgraphs has voted to halt and there is no message which is being sent in
+   * the current superstep.
+   */
   void sendHeartBeat() {
     Message<K, M> msg = new Message<K, M>();
     ControlMessage controlInfo = new ControlMessage();
