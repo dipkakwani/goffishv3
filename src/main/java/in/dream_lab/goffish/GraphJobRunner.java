@@ -58,7 +58,6 @@ import org.apache.hama.commons.util.KeyValuePair;
 
 import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.Vertex;
-import in.dream_lab.goffish.VertexCount.VrtxCnt;
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.ISubgraph;
@@ -68,6 +67,8 @@ import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
 import org.apache.hama.util.WritableUtils;
 
+import in.dream_lab.goffish.sample.VertexCount.VrtxCnt;
+import in.dream_lab.goffish.sample.ConnectedComponents;;
 /**
  * Fully generic graph job runner.
  * 
@@ -152,7 +153,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
       //VertexCount.VrtxCnt subgraphComputeRunner = new VertexCount.VrtxCnt();
-      ConnectedComponents.CC subgraphComputeRunner = new ConnectedComponents.CC();
+      SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
       subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);

@@ -23,7 +23,7 @@ import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.ISubgraphCompute;
 
 public abstract class SubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraphCompute<S, V, E, M, I, J, K> {
-  ISubgraph<S, V, E, I, J, K> subgraph;
+  private ISubgraph<S, V, E, I, J, K> subgraph;
   long superStepCount;
   boolean voteToHalt;
   GraphJobRunner<S, V, E, M, I, J, K> runner;

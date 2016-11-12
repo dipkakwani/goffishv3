@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package in.dream_lab.goffish;
+package in.dream_lab.goffish.sample;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -27,54 +27,46 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
+import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.SubgraphCompute;
 import in.dream_lab.goffish.api.IMessage;
-import in.dream_lab.goffish.api.IRemoteVertex;
 
-public class ConnectedComponents {
-  public static class CC extends
+public class VertexCount {
+  public static class VrtxCnt extends
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
 
-    long minSubgraphID;
-    
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
-        minSubgraphID = subgraph.getSubgraphID().get();       
-        for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : subgraph
-            .getRemoteVertices()) {
-          if (minSubgraphID > vertex.getSubgraphID().get()) {
-            minSubgraphID = vertex.getSubgraphID().get();
-          }
-        }
-        LongWritable msg = new LongWritable(minSubgraphID);
-        sendToNeighbors(msg);
-        subgraph.setValue(new LongWritable(minSubgraphID));
+        long count = getSubgraph().localVertexCount();
+        System.out.println("Number of local vertices = " + count);
+
+        LongWritable message = new LongWritable(count);
+        sendToAll(message);
+
       } else {
-        boolean updated = false;
+        long totalVertices = 0;
         for (IMessage<LongWritable, LongWritable> msg : messages) {
-          long subgraphID = msg.getMessage().get();
-          if (minSubgraphID > subgraphID) {
-            minSubgraphID = subgraphID;
-            updated = true;
-          }
+          LongWritable count= msg.getMessage();
+          totalVertices += count.get();
         }
-        if (updated) {
-          subgraph.setValue(new LongWritable(minSubgraphID));
-          LongWritable msg = new LongWritable(minSubgraphID);
-          sendToNeighbors(msg);
+        System.out.println("Total vertices = " + totalVertices);
+        try {
+          //Use OutputWriter
         }
-        System.out.println("Superstep "+ getSuperStep() + " Subgraph " + subgraph.getSubgraphID() + " value " + subgraph.getValue());
+        finally {
+          
+        }
       }
-      System.out.println("Subgraph " + subgraph.getSubgraphID() + " in superstep " + getSuperStep() + " value " + subgraph.getValue());
       voteToHalt();
     }
-  
-  
+    
   }
+  
   public static void main(String args[]) throws IOException,InterruptedException, ClassNotFoundException, ParseException
   {
 	  HamaConfiguration conf = new HamaConfiguration();
-	  GraphJob pageJob = new GraphJob(conf, CC.class);
+	  GraphJob pageJob = new GraphJob(conf, VrtxCnt.class);
 	  pageJob.setJobName("Vertex Count");
 	  pageJob.setInputFormat(TextInputFormat.class);
 	  pageJob.setInputKeyClass(LongWritable.class);
