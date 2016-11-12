@@ -27,6 +27,9 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
+import in.dream_lab.goffish.api.IMessage;
+import in.dream_lab.goffish.api.IRemoteVertex;
+
 public class ConnectedComponents {
   public static class CC extends
       SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {

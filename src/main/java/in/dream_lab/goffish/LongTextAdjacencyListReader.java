@@ -40,6 +40,11 @@ import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 import org.apache.hama.util.ReflectionUtils;
 
+import in.dream_lab.goffish.api.IEdge;
+import in.dream_lab.goffish.api.ISubgraph;
+import in.dream_lab.goffish.api.IVertex;
+import in.dream_lab.goffish.api.IMessage;
+
 
 /* Reads graph in the adjacency list format:
  * VID PartitionID Sink1 Sink2 ...

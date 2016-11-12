@@ -19,6 +19,11 @@ import org.apache.hama.commons.util.KeyValuePair;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
+import in.dream_lab.goffish.api.IEdge;
+import in.dream_lab.goffish.api.ISubgraph;
+import in.dream_lab.goffish.api.IVertex;
+import in.dream_lab.goffish.api.IMessage;
+
 /*
  * Reads the graph from JSON format
  * [srcid,pid, srcvalue, [[sinkid1,edgeid1,edgevalue1], [sinkid2,edgeid2,edgevalue2] ... ]] 
@@ -197,7 +202,9 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
 
     Vertex<V, E, LongWritable, LongWritable> vertex = new Vertex<V, E, LongWritable, LongWritable>(
         sourceID);
+    //fix this
     V value = (V) JSONInput.get(2);
+    
     vertex.setValue(value);
 
     JSONArray edgeList = (JSONArray) JSONInput.get(3);
@@ -207,7 +214,9 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
           Long.valueOf(edgeValues[0].toString()));
       LongWritable edgeID = new LongWritable(
           Long.valueOf(edgeValues[1].toString()));
+      //fix this
       E edgeValue = (E) edgeValues[2];
+      
       Edge<E, LongWritable, LongWritable> edge = new Edge<E, LongWritable, LongWritable>(
           edgeID, sinkID);
       edge.setValue(edgeValue);

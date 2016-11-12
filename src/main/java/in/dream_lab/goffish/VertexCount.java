@@ -19,18 +19,15 @@ package in.dream_lab.goffish;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
-import in.dream_lab.goffish.IMessage.MessageType;
+import in.dream_lab.goffish.api.IMessage;
 
 public class VertexCount {
   public static class VrtxCnt extends
@@ -39,11 +36,7 @@ public class VertexCount {
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
-        long count = 0;
-        for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : subgraph
-            .getLocalVertices()) {
-          count++;
-        }
+        long count = subgraph.localVertexCount();
         System.out.println("Number of local vertices = " + count);
 
         LongWritable message = new LongWritable(count);
@@ -65,9 +58,9 @@ public class VertexCount {
       }
       voteToHalt();
     }
-  
-  
+    
   }
+  
   public static void main(String args[]) throws IOException,InterruptedException, ClassNotFoundException, ParseException
   {
 	  HamaConfiguration conf = new HamaConfiguration();

@@ -27,8 +27,11 @@ import org.apache.hadoop.io.Writable;
  * */
 public interface ISubgraph<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> {
     
+	//TODO: add new class for IBiSubgraph
+	//TODO: add edge efficient subgraph implementation also
+	
   IVertex<V, E, I, J> getVertexByID(I vertexID);
-
+  //TODO: add getEdgeByID(J edgeID);
   K getSubgraphID();
 
   long vertexCount();
@@ -40,6 +43,8 @@ public interface ISubgraph<S extends Writable, V extends Writable, E extends Wri
   Iterable<IVertex<V, E, I, J>> getLocalVertices();
   
   Iterable<IRemoteVertex<V, E, I, J, K>> getRemoteVertices();
+  
+  //TODO:add iterable over edges
   
   void setValue(S value);
   

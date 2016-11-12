@@ -24,6 +24,9 @@ import java.util.Map;
 
 import org.apache.hadoop.io.Writable;
 
+import in.dream_lab.goffish.api.IPartition;
+import in.dream_lab.goffish.api.ISubgraph;
+
 public class Partition<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements IPartition<S, V, E, I, J, K> {
   private int partitionID;
   private List<ISubgraph<S, V, E, I, J, K>> _subgraphs;

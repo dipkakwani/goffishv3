@@ -25,6 +25,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
+import in.dream_lab.goffish.api.IMessage;
+
 public class Message<K extends Writable, M extends Writable> implements IMessage<K, M> {
   private IMessage.MessageType messageType;
   private K subgraphID;
@@ -65,7 +67,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
   }
   
   @Override
-  public in.dream_lab.goffish.IMessage.MessageType getMessageType() {
+  public in.dream_lab.goffish.api.IMessage.MessageType getMessageType() {
     return messageType;
   }
   

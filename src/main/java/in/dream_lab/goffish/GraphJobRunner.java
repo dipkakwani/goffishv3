@@ -59,6 +59,10 @@ import org.apache.hama.commons.util.KeyValuePair;
 import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.Vertex;
 import in.dream_lab.goffish.VertexCount.VrtxCnt;
+import in.dream_lab.goffish.api.IMessage;
+import in.dream_lab.goffish.api.IRemoteVertex;
+import in.dream_lab.goffish.api.ISubgraph;
+import in.dream_lab.goffish.api.ISubgraphCompute;
 
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
