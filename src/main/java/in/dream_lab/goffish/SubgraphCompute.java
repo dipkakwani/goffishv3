@@ -52,7 +52,7 @@ public abstract class SubgraphCompute <S extends Writable, V extends Writable, E
     return voteToHalt;
   }
   
-  void resume() {
+  void setActive() {
     this.voteToHalt = false;
   }
   

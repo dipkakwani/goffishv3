@@ -25,5 +25,10 @@ import org.apache.hadoop.io.Writable;
  * */
 //Question: Do we really need value for a remote vertex?
 public interface IRemoteVertex<V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable>  extends IVertex<V, E, I, J> {
+  
   K getSubgraphID();
+  
+  void setLocalState(V value);
+  
+  V getLocalState();
 }

@@ -19,6 +19,7 @@ package in.dream_lab.goffish;
 
 import java.util.Collection;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.io.Writable;
 
 import in.dream_lab.goffish.api.IEdge;
@@ -60,17 +61,27 @@ public class RemoteVertex<V extends Writable, E extends Writable, I extends Writ
 
   @Override
   public V getValue() {
-    return _value;
+    throw new NotImplementedException("Remote Vertex does not have a value");
   }
 
   @Override
   public void setValue(V value) {
-    _value = value;
+    throw new NotImplementedException("Remote Vertex does not have a value");
   }
 
   @Override
   public K getSubgraphID() {
     return subgraphID;
+  }
+
+  @Override
+  public void setLocalState(V value) {
+    this._value = value;
+  }
+
+  @Override
+  public V getLocalState() {
+    return _value;
   }
 
 }

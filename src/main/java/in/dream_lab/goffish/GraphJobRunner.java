@@ -194,7 +194,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
             System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " messages " + messagesToSubgraph.size());
           else
             System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " 0 messages ");
-          subgraph.resume();
+          subgraph.setActive();
           subgraph.compute(messagesToSubgraph);
           if (!subgraph.hasVotedToHalt())
             allVotedToHalt = false;
