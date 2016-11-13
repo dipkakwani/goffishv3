@@ -20,7 +20,15 @@ package in.dream_lab.goffish.api;
 import java.util.Collection;
 import org.apache.hadoop.io.Writable;
 
-
+/*
+ * @param <S> Subgraph value object type
+ * @param <V> Vertex value object type
+ * @param <E> Edge value object type
+ * @param <M> Message object type
+ * @param <I> Vertex ID object type
+ * @param <J> Edge ID object type
+ * @param <K> Subgraph ID object type
+ */
 public interface ISubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> {
   
   ISubgraph<S, V, E, I, J, K> getSubgraph();//templatize return type, G extends ISubgraph<S, V, E, I, J, K>

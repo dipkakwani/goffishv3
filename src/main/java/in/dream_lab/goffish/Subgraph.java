@@ -23,16 +23,18 @@ import java.util.List;
 import java.util.Map;
 import org.apache.hadoop.io.Writable;
 
+import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.IVertex;
 
-public class Subgraph <S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraph<S, V, E, I, J, K> {
+public class Subgraph<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable>
+    implements ISubgraph<S, V, E, I, J, K> {
   K subgraphID;
-  private Map<I, IVertex<V, E, I, J>> _vertexMap; 
+  private Map<I, IVertex<V, E, I, J>> _vertexMap;
   int partitionID;
   S _value;
-  
+
   Subgraph(int partitionID, K subgraphID) {
     this.partitionID = partitionID;
     this.subgraphID = subgraphID;
@@ -42,7 +44,7 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
   void addVertex(IVertex<V, E, I, J> v) {
     _vertexMap.put(v.getVertexID(), v);
   }
-  
+
   @Override
   public IVertex<V, E, I, J> getVertexByID(I vertexID) {
     return _vertexMap.get(vertexID);
@@ -57,7 +59,7 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
   public long vertexCount() {
     return _vertexMap.size();
   }
-  
+
   @Override
   public long localVertexCount() {
     long localVertexCount = 0;
@@ -71,7 +73,7 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
   public Iterable<IVertex<V, E, I, J>> getVertices() {
     return _vertexMap.values();
   }
-  
+
   /* Avoid using this function as it is inefficient. */
   @Override
   public Iterable<IVertex<V, E, I, J>> getLocalVertices() {
@@ -81,24 +83,49 @@ public class Subgraph <S extends Writable, V extends Writable, E extends Writabl
         localVertices.add(v);
     return localVertices;
   }
-  
+
   @Override
   public void setValue(S value) {
     _value = value;
   }
-  
+
   @Override
   public S getValue() {
-    return _value; 
+    return _value;
   }
-  
+
   @Override
   @SuppressWarnings("unchecked")
   public Iterable<IRemoteVertex<V, E, I, J, K>> getRemoteVertices() {
     List<IRemoteVertex<V, E, I, J, K>> remoteVertices = new ArrayList<IRemoteVertex<V, E, I, J, K>>();
     for (IVertex<V, E, I, J> v : _vertexMap.values())
       if (v.isRemote())
-        remoteVertices.add((IRemoteVertex<V, E, I, J, K>)v);
+        remoteVertices.add((IRemoteVertex<V, E, I, J, K>) v);
     return remoteVertices;
+  }
+
+  @Override
+  public IEdge<E, I, J> getEdgeByID(J edgeID) {
+    for (IVertex<V, E, I, J> vertex : _vertexMap.values()) {
+      for (IEdge<E, I, J> vertexEdge : vertex.outEdges()) {
+        if (edgeID.equals(vertexEdge)) {
+          return vertexEdge;
+        }
+      }
+    }
+    return null;
+  }
+
+  @Override
+  public Iterable<IEdge<E, I, J>> getEdges() {
+
+    List<IEdge<E, I, J>> edgeList = new ArrayList<IEdge<E, I, J>>();
+
+    for (IVertex<V, E, I, J> vertex : _vertexMap.values()) {
+      for (IEdge<E, I, J> vertexEdge : vertex.outEdges()) {
+        edgeList.add(vertexEdge);
+      }
+    }
+    return null;
   }
 }

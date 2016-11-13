@@ -19,6 +19,11 @@ package in.dream_lab.goffish.api;
 
 import org.apache.hadoop.io.Writable;
 
+/*
+ * @param <E> Edge value object type
+ * @param <I> Vertex ID object type
+ * @param <J> Edge ID object type
+ */
 public interface IEdge<E extends Writable, I extends Writable, J extends Writable> {
   
   J getEdgeID();

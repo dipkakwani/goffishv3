@@ -22,6 +22,9 @@ import org.apache.hadoop.io.Writable;
 /* Defines remote vertex interface.
  * @param <V> Vertex value object type
  * @param <E> Edge value object type
+ * @param <I> Vertex ID type
+ * @param <J> Edge ID type
+ * @param <K> Subgraph ID type
  * */
 public interface IRemoteVertex<V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable>  extends IVertex<V, E, I, J> {
   

@@ -22,59 +22,60 @@ import org.apache.hadoop.io.Writable;
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.ISubgraphCompute;
 
-public abstract class SubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> implements ISubgraphCompute<S, V, E, M, I, J, K> {
+public abstract class SubgraphCompute<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
+    implements ISubgraphCompute<S, V, E, M, I, J, K> {
   private ISubgraph<S, V, E, I, J, K> subgraph;
   long superStepCount;
   boolean voteToHalt;
   GraphJobRunner<S, V, E, M, I, J, K> runner;
-  
+
   public void init(GraphJobRunner<S, V, E, M, I, J, K> runner) {
     this.runner = runner;
     this.voteToHalt = false;
   }
-  
+
   @Override
   public long getSuperStep() {
     return runner.getSuperStepCount();
   }
-  
+
   @Override
   public ISubgraph<S, V, E, I, J, K> getSubgraph() {
     return subgraph;
   }
-  
+
   @Override
   public void voteToHalt() {
     voteToHalt = true;
   }
-  
+
   public boolean hasVotedToHalt() {
     return voteToHalt;
   }
-  
+
   void setActive() {
     this.voteToHalt = false;
   }
-  
+
   void setSubgraph(ISubgraph<S, V, E, I, J, K> subgraph) {
     this.subgraph = subgraph;
   }
-  
+
   @Override
   public void sendMessage(K subgraphID, M message) {
     runner.sendMessage(subgraphID, message);
   }
-  
+
   @Override
   public void sendToVertex(I vertexID, M message) {
     runner.sendToVertex(vertexID, message);
   }
-  
+
   @Override
   public void sendToAll(M message) {
     runner.sendToAll(message);
   }
-  
+
   @Override
   public void sendToNeighbors(M message) {
     runner.sendToNeighbors(subgraph, message);

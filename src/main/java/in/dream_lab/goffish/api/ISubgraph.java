@@ -23,30 +23,34 @@ import org.apache.hadoop.io.Writable;
  * @param <S> Subgraph value object type
  * @param <V> Vertex value object type
  * @param <E> Edge value object type
- * @param <M> Message object type
+ * @param <I> Vertex ID object type
+ * @param <J> Edge ID object type
+ * @param <K> Subgraph ID object type
  * */
 public interface ISubgraph<S extends Writable, V extends Writable, E extends Writable, I extends Writable, J extends Writable, K extends Writable> {
-    
-	//TODO: add new class for IBiSubgraph
-	//TODO: add edge efficient subgraph implementation also
-	
+
+  // TODO: add new class for IBiSubgraph
+  // TODO: add edge efficient subgraph implementation also
+
   IVertex<V, E, I, J> getVertexByID(I vertexID);
-  //TODO: add getEdgeByID(J edgeID);
+
   K getSubgraphID();
 
   long vertexCount();
-  
+
   long localVertexCount();
 
   Iterable<IVertex<V, E, I, J>> getVertices();
-  
+
   Iterable<IVertex<V, E, I, J>> getLocalVertices();
-  
+
   Iterable<IRemoteVertex<V, E, I, J, K>> getRemoteVertices();
-  
-  //TODO:add iterable over edges
-  
+
+  Iterable<IEdge<E, I, J>> getEdges();
+
+  IEdge<E, I, J> getEdgeByID(J edgeID);
+
   void setValue(S value);
-  
+
   S getValue();
 }
