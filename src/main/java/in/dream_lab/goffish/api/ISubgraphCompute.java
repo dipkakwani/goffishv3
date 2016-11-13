@@ -38,20 +38,19 @@ public interface ISubgraphCompute <S extends Writable, V extends Writable, E ext
   long getSuperStep();
 
   void compute(Collection<IMessage<K, M>> messages);
-  
+
   void sendMessage(K subgraphID, M message);
-  
+
   void sendToVertex(I vertexID, M message);
-  
+
   void sendToAll(M message); // auto fill subgraph ID on send or receive
-  
+
   void sendToNeighbors(M message);
-  
-  /* TODO:
+
   void sendMessage(K subgraphID, Collection<M> message);
-  
+
   void sendToAll(Collection<M> message);
-  
+
   void sendToNeighbors(Collection<M> message);
-   */
+
 }

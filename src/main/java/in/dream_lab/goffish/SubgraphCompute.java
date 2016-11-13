@@ -17,6 +17,8 @@
  */
 package in.dream_lab.goffish;
 
+import java.util.Collection;
+
 import org.apache.hadoop.io.Writable;
 
 import in.dream_lab.goffish.api.ISubgraph;
@@ -24,6 +26,7 @@ import in.dream_lab.goffish.api.ISubgraphCompute;
 
 public abstract class SubgraphCompute<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
     implements ISubgraphCompute<S, V, E, M, I, J, K> {
+  
   private ISubgraph<S, V, E, I, J, K> subgraph;
   long superStepCount;
   boolean voteToHalt;
@@ -53,12 +56,22 @@ public abstract class SubgraphCompute<S extends Writable, V extends Writable, E 
     return voteToHalt;
   }
 
+  /*
+   * Resumes the subgraph from halted state
+   */
   void setActive() {
     this.voteToHalt = false;
   }
 
   void setSubgraph(ISubgraph<S, V, E, I, J, K> subgraph) {
     this.subgraph = subgraph;
+  }
+
+  @Override
+  public void sendMessage(K subgraphID, Collection<M> messages) {
+    for (M message : messages) {
+      this.sendMessage(subgraphID, message);
+    }
   }
 
   @Override
@@ -72,8 +85,22 @@ public abstract class SubgraphCompute<S extends Writable, V extends Writable, E 
   }
 
   @Override
+  public void sendToAll(Collection<M> messages) {
+    for (M message : messages) {
+      this.sendToAll(message);
+    }
+  }
+
+  @Override
   public void sendToAll(M message) {
     runner.sendToAll(message);
+  }
+
+  @Override
+  public void sendToNeighbors(Collection<M> messages) {
+    for (M message : messages) {
+      this.sendToNeighbors(message);
+    }
   }
 
   @Override

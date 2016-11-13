@@ -12,10 +12,13 @@ import java.util.Queue;
 import java.util.Set;
 
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
+import org.apache.hama.util.ReflectionUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
@@ -35,6 +38,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
     implements
     IReader<Writable, Writable, Writable, Writable, S, V, E, LongWritable, LongWritable, LongWritable> {
 
+  HamaConfiguration conf;
   Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap;
   BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
   private Map<K, Integer> subgraphPartitionMap;
@@ -44,6 +48,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
       Map<K, Integer> subgraphPartitionMap) {
     this.peer = peer;
     this.subgraphPartitionMap = subgraphPartitionMap;
+    this.conf = peer.getConfiguration();
   }
 
   @Override
@@ -190,8 +195,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
     }
 
     return partition.getSubgraphs();
-    //TODO
-    //return null;
+
   }
   
   @SuppressWarnings("unchecked")
@@ -205,7 +209,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
     Vertex<V, E, LongWritable, LongWritable> vertex = new Vertex<V, E, LongWritable, LongWritable>(
         sourceID);
     //fix this
-    V value = (V) JSONInput.get(2);
+    V value = (V) new Text(JSONInput.get(2).toString());
     
     vertex.setValue(value);
 
@@ -217,7 +221,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
       LongWritable edgeID = new LongWritable(
           Long.valueOf(edgeValues[1].toString()));
       //fix this
-      E edgeValue = (E) edgeValues[2];
+      E edgeValue = (E) new Text(edgeValues[2].toString());
       
       Edge<E, LongWritable, LongWritable> edge = new Edge<E, LongWritable, LongWritable>(
           edgeID, sinkID);

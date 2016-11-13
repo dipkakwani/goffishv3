@@ -64,7 +64,7 @@ public class GraphJob extends BSPJob {
     super.setPartitioner(theClass);
   }
   
-  /*
+  /**
    * Use RicherSubgraph Class instead of Subgraph for more features
    */
   public void useRicherSubgraph(boolean use) {
