@@ -176,11 +176,13 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         vertexMap.put(sinkID, sink);
       }
     }
-    System.out.println("Number of vertices after adding remote Vertices = "+vertexMap.size());
+    System.out.println("Total Number of vertices after adding remote Vertices = "+vertexMap.size());
 
     Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition = new Partition<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex());
     
     formSubgraphs(partition, vertexMap.values());
+    
+    System.out.println("Number of subgraphs in partition " + peer.getPeerIndex() + " is: " + partition.getSubgraphs().size());
     
     /*
      * Ask Remote vertices to send their subgraph IDs. Requires 2 supersteps
@@ -259,6 +261,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     Set<LongWritable> visited = new HashSet<LongWritable>();  
     System.out.println(" Size " + vertices.size()+ "=size=" + vertexMap.size());
     
+    /*
     for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
       if (!visited.contains(v.getVertexID()) && !v.isRemote()) {
         LongWritable subgraphID = new LongWritable(subgraphCount++ | (((long) partition.getPartitionID()) << 32));
@@ -304,6 +307,53 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
             + subgraph.vertexCount() + " Vertices");
       }
     }
+    */
+    // initialize disjoint set
+    DisjointSets<IVertex<V, E, LongWritable, LongWritable>> ds = new DisjointSets<IVertex<V, E, LongWritable, LongWritable>>(
+        vertices.size());
+    for (IVertex<V, E, LongWritable, LongWritable> vertex : vertices) {
+      ds.addSet(vertex);
+    }
+
+    // union edge pairs
+    for (IVertex<V, E, LongWritable, LongWritable> vertex : vertices) {
+      if (!vertex.isRemote()) {
+        for (IEdge<E, LongWritable, LongWritable> edge : vertex.outEdges()) {
+          IVertex<V, E, LongWritable, LongWritable> sink = vertexMap
+              .get(edge.getSinkVertexID());
+          ds.union(vertex, sink);
+        }
+      }
+    }
+
+    Collection<? extends Collection<IVertex<V, E, LongWritable, LongWritable>>> components = ds
+        .retrieveSets();
+
+    for (Collection<IVertex<V, E, LongWritable, LongWritable>> component : components) {
+      LongWritable subgraphID = new LongWritable(
+          subgraphCount++ | (((long) partition.getPartitionID()) << 32));
+      Subgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph = new Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>(
+          peer.getPeerIndex(), subgraphID);
+      for (IVertex<V, E, LongWritable, LongWritable> vertex : component) {
+        subgraph.addVertex(vertex);
+      }
+      partition.addSubgraph(subgraph);
+      String msg = peer.getPeerIndex() + "," + subgraphID.toString();
+      Message<LongWritable, LongWritable> subgraphLocationBroadcast = new Message<LongWritable, LongWritable>();
+      subgraphLocationBroadcast.setMessageType(IMessage.MessageType.SUBGRAPH);
+      ControlMessage controlInfo = new ControlMessage();
+      controlInfo
+          .setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+      controlInfo.setextraInfo(msg);
+      subgraphLocationBroadcast.setControlInfo(controlInfo);
+      for (String peerName : peer.getAllPeerNames()) {
+        peer.send(peerName, (Message<K, M>) subgraphLocationBroadcast);
+      }
+
+      System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
+          + subgraph.vertexCount() + " Vertices");
+    }
+
   }
 
 }
