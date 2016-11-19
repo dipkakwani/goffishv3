@@ -233,7 +233,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.HEARTBEAT);
     String allVotedToHaltMsg = (allVotedToHalt) ? "1" : "0";
     String messageInFlightMsg = (messageInFlight) ? "1" : "0";
-    controlInfo.setextraInfo(allVotedToHaltMsg + messageInFlightMsg);
+    String heartBeatMsg = allVotedToHaltMsg + messageInFlightMsg;
+    controlInfo.setextraInfo(heartBeatMsg.getBytes());
     msg.setControlInfo(controlInfo);
     sendMessage(peer.getPeerName(getMasterTaskIndex()), msg);
   }
@@ -275,7 +276,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   /* Sets global vote to halt to false if any of the peer is still active. */
   void parseHeartBeat(IMessage<K, M> message) {
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
-    String heartBeat = content.getExtraInfo();
+    String heartBeat = new String(content.getExtraInfo());
     System.out.println("Heartbeat = "+ heartBeat);
     if (!heartBeat.equals("10"))
       globalVoteToHalt = false;

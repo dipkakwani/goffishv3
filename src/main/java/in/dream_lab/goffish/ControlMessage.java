@@ -32,18 +32,27 @@ public class ControlMessage implements IControlMessage{
 
   private IControlMessage.TransmissionType transmissionType;
   private Text vertexValues = new Text("");
-  private Text generalInfo = new Text("");
+  //private Text generalInfo = new Text("");
+  private byte[] generalInfo;
   private int partitionID;
   
   public ControlMessage() {
     transmissionType = IControlMessage.TransmissionType.NORMAL;
-    generalInfo = new Text("");
+    //generalInfo = new Text("");
   }
   
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, transmissionType);
-    generalInfo.write(out);
+    int generalInfoSize = 0;
+    if (generalInfo!=null) {
+      generalInfoSize = generalInfo.length;
+      out.writeInt(generalInfoSize);
+      out.write(generalInfo);
+    }
+    else
+      out.writeInt(generalInfoSize); //0
+    //generalInfo.write(out);
     if (isPartitionMessage()) {
       out.writeInt(partitionID);
     }
@@ -55,7 +64,13 @@ public class ControlMessage implements IControlMessage{
   @Override
   public void readFields(DataInput in) throws IOException {
     transmissionType = WritableUtils.readEnum(in, IControlMessage.TransmissionType.class);
-    generalInfo.readFields(in);
+    //generalInfo.readFields(in);
+    int generalInfoSize;
+    generalInfoSize = in.readInt();
+    if (generalInfoSize>0) {
+      generalInfo = new byte[generalInfoSize];
+      in.readFully(generalInfo);
+    }
     if (isPartitionMessage()) {
       partitionID = in.readInt();
     }
@@ -81,12 +96,12 @@ public class ControlMessage implements IControlMessage{
     this.vertexValues = new Text(vertex);
   }
   
-  public void setextraInfo(String info) {
-    this.generalInfo = new Text(info);
+  public void setextraInfo(byte b[]) {
+    this.generalInfo = b;
   }
   
-  public String getExtraInfo() {
-    return generalInfo.toString();
+  public  byte[] getExtraInfo() {
+    return generalInfo;
   }
   
   public boolean isNormalMessage() {
