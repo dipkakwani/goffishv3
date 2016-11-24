@@ -58,10 +58,12 @@ import org.apache.hama.commons.util.KeyValuePair;
 
 import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.Vertex;
+import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.ISubgraphCompute;
+import in.dream_lab.goffish.api.IVertex;
 import in.dream_lab.goffish.humus.api.IControlMessage;
 import in.dream_lab.goffish.humus.api.IReader;
 
@@ -104,7 +106,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
 
-    System.out.println("BSP Setup");
+    //System.out.println("BSP Setup");
     setupfields(peer);
     /*TODO: Read input reader class type from Hama conf. 
      * FIXME:Make type of Message generic in Reader. */
@@ -118,9 +120,20 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         //ReflectionUtils.newInstance(readerClass, params);
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     
+    int subgraphs = 0;
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
+      subgraphs++;
       partition.addSubgraph(subgraph);
+      for (IVertex<V, E, I, J> vertex : subgraph.getLocalVertices()) {
+        System.out.print(vertex.getVertexID()+" "+peer.getPeerIndex()+"\t");
+        for (IEdge<E, I, J> edges: vertex.outEdges()) {
+          //take care of extra space in the end while comparing
+          System.out.print(edges.getSinkVertexID()+" ");
+        }
+        System.out.println();
+      }
     }
+    System.out.println(subgraphs);
   }
   
   /*Initialize the  fields*/
@@ -149,7 +162,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
     executor.setMaximumPoolSize(64);*/
-    System.out.println("BSP method at superstep "+peer.getSuperstepCount());
+    //System.out.println("BSP method at superstep "+peer.getSuperstepCount());
     
     /*
      * Creating SubgraphCompute objects
@@ -171,7 +184,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
-      System.out.println(messages.size()+" Messages");
+      //System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
@@ -188,17 +201,17 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
 
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-        System.out.println("Calling compute with vertices"+subgraph.getSubgraph().localVertexCount());
+        //System.out.println("Calling compute with vertices"+subgraph.getSubgraph().localVertexCount());
         boolean hasMessages = false;
         List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
         if (messagesToSubgraph != null) {
           hasMessages = true;
         }
         if (!subgraph.hasVotedToHalt() || hasMessages) {
-          if (hasMessages)
-            System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " messages " + messagesToSubgraph.size());
-          else
-            System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " 0 messages ");
+          //if (hasMessages)
+            //System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " messages " + messagesToSubgraph.size());
+          //else
+            //System.out.println("Computing " + subgraph.getSubgraph().getSubgraphID() + " 0 messages ");
           subgraph.setActive();
           subgraph.compute(messagesToSubgraph);
           if (!subgraph.hasVotedToHalt())
@@ -216,9 +229,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
-    System.out.println("Clean up!");
+    //System.out.println("Clean up!");
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      System.out.println(subgraph.getSubgraph().getValue());
+      //System.out.println(subgraph.getSubgraph().getValue());
     }
   }
 
@@ -277,7 +290,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   void parseHeartBeat(IMessage<K, M> message) {
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
     String heartBeat = new String(content.getExtraInfo());
-    System.out.println("Heartbeat = "+ heartBeat);
+    //System.out.println("Heartbeat = "+ heartBeat);
     if (!heartBeat.equals("10"))
       globalVoteToHalt = false;
   }

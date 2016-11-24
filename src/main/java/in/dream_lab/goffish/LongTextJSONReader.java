@@ -282,6 +282,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
             LongWritable sinkID = e.getSinkVertexID();
             if (!visited.contains(sinkID)) {
               Q.add(sinkID);
+              visited.add(sinkID);
             }
           }
         }

@@ -39,7 +39,7 @@ public class VertexCount {
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
         long count = getSubgraph().localVertexCount();
-        System.out.println("Number of local vertices = " + count);
+//        System.out.println("Number of local vertices = " + count);
 
         LongWritable message = new LongWritable(count);
         sendToAll(message);
@@ -50,7 +50,7 @@ public class VertexCount {
           LongWritable count= msg.getMessage();
           totalVertices += count.get();
         }
-        System.out.println("Total vertices = " + totalVertices);
+//        System.out.println("Total vertices = " + totalVertices);
         try {
           //Use OutputWriter
         }
