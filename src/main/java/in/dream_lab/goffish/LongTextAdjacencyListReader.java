@@ -57,10 +57,12 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap;
   BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
   private Map<K, Integer> subgraphPartitionMap;
+  private Map<LongWritable, LongWritable> vertexSubgraphMap;
   
   public LongTextAdjacencyListReader(BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer,Map<K, Integer> subgraphPartitionMap) {
     this.peer = peer;
     this.subgraphPartitionMap = subgraphPartitionMap;
+    this.vertexSubgraphMap = new HashMap<LongWritable, LongWritable>();
   }
   
   
@@ -204,6 +206,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
 
     peer.sync();
 
+    Map<Integer, List<Message<LongWritable, LongWritable>>> replyMessages = new HashMap<Integer, List<Message<LongWritable, LongWritable>>>();
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       /*
        * Subgraph Partition mapping broadcast
@@ -223,6 +226,27 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       String msgString = new String(rawMsg);
       String msgStringArr[] = msgString.split(",");
       LongWritable sinkID = new LongWritable(Long.valueOf(msgStringArr[0]));
+      LongWritable sinkSubgraphID = vertexSubgraphMap.get(sinkID);
+      Integer sinkPartition = new Integer(msgStringArr[1]);
+      //In case this partition does not have the vertex
+      if (sinkSubgraphID == null) {
+        continue;
+      }
+      String reply = sinkID + "," + sinkSubgraphID;
+      Message<LongWritable, LongWritable> subgraphIDReply = new Message<LongWritable, LongWritable>(); 
+      ControlMessage controlInfo = new ControlMessage();
+      controlInfo.setTransmissionType(IControlMessage.TransmissionType.NORMAL);
+      controlInfo.setextraInfo(reply.getBytes());
+      subgraphIDReply.setControlInfo(controlInfo);
+      
+      List<Message<LongWritable, LongWritable>> messageList = replyMessages.get(sinkPartition);
+      if (messageList == null) {
+        messageList = new ArrayList<Message<LongWritable, LongWritable>>();
+        replyMessages.put(sinkPartition, messageList);
+      }
+      messageList.add(subgraphIDReply);
+      //peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),(Message<K, M>)subgraphIDReply);
+    /*
       for (ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph: partition.getSubgraphs()) {
         IVertex<V, E, LongWritable, LongWritable> v = subgraph.getVertexByID(sinkID);
         if (v !=null && !v.isRemote()) {
@@ -234,7 +258,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
           subgraphIDReply.setControlInfo(controlInfo);
           peer.send(peer.getPeerName(Integer.parseInt(msgStringArr[1])),(Message<K, M>)subgraphIDReply);
         }
-      }
+      }*/
+    }
+    
+    for (Map.Entry<Integer, List<Message<LongWritable, LongWritable>>> replies: replyMessages.entrySet()) {
+      sendMessage(replies.getKey().intValue() , replies.getValue());
     }
     
     peer.sync();
@@ -258,13 +286,27 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     return partition.getSubgraphs();
   }
   
+  /* takes partition and message list as argument and sends the messages to their respective partition.
+   * Needed to send messages just before peer.sync(),as a hama bug causes the program to stall while trying
+   * to send and recieve(iterate over recieved message) large messages at the same time
+   */
+  private void sendMessage(int partition,
+      List<Message<LongWritable, LongWritable>> messageList) throws IOException {
+    
+    for (Message<LongWritable, LongWritable> message : messageList) {
+      peer.send(peer.getPeerName(partition), (Message<K, M>)message);
+    }
+    
+  }
+
+
   /* Forms subgraphs by finding (weakly) connected components. */
   void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, Collection<IVertex<V, E, LongWritable, LongWritable>> vertices) throws IOException {
     long subgraphCount = 0;
     Set<LongWritable> visited = new HashSet<LongWritable>();  
     //System.out.println(" Size " + vertices.size()+ "=size=" + vertexMap.size());
     
-    
+    /*
     for (IVertex<V, E, LongWritable, LongWritable> v : vertices) {
       if (!visited.contains(v.getVertexID()) && !v.isRemote()) {
         LongWritable subgraphID = new LongWritable(subgraphCount++ | (((long) partition.getPartitionID()) << 32));
@@ -272,7 +314,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         //BFS
         Queue<LongWritable> Q = new LinkedList<LongWritable>();
         Q.add(v.getVertexID());
-        //System.out.println("Starting vertex for BFS " + v.getVertexID());
+        System.out.println("Starting vertex for BFS " + v.getVertexID());
         while (!Q.isEmpty()) {
           LongWritable vertexID = Q.poll();
           if(visited.contains(vertexID)) {
@@ -300,15 +342,62 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         ControlMessage controlInfo = new ControlMessage();
         controlInfo
             .setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
-        controlInfo.setextraInfo(msg.getBytes());
+        controlInfo.setextraInfo(msg);
         subgraphLocationBroadcast.setControlInfo(controlInfo);
         for (String peerName : peer.getAllPeerNames()) {
           peer.send(peerName, (Message<K, M>) subgraphLocationBroadcast);
         }
 
-//        System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
-//            + subgraph.vertexCount() + " Vertices");
+        System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
+            + subgraph.vertexCount() + " Vertices");
       }
+    }
+    */
+    // initialize disjoint set
+    DisjointSets<IVertex<V, E, LongWritable, LongWritable>> ds = new DisjointSets<IVertex<V, E, LongWritable, LongWritable>>(
+        vertices.size());
+    for (IVertex<V, E, LongWritable, LongWritable> vertex : vertices) {
+      ds.addSet(vertex);
+    }
+
+    // union edge pairs
+    for (IVertex<V, E, LongWritable, LongWritable> vertex : vertices) {
+      if (!vertex.isRemote()) {
+        for (IEdge<E, LongWritable, LongWritable> edge : vertex.outEdges()) {
+          IVertex<V, E, LongWritable, LongWritable> sink = vertexMap
+              .get(edge.getSinkVertexID());
+          ds.union(vertex, sink);
+        }
+      }
+    }
+
+    Collection<? extends Collection<IVertex<V, E, LongWritable, LongWritable>>> components = ds
+        .retrieveSets();
+
+    for (Collection<IVertex<V, E, LongWritable, LongWritable>> component : components) {
+      LongWritable subgraphID = new LongWritable(
+          subgraphCount++ | (((long) partition.getPartitionID()) << 32));
+      Subgraph<S, V, E, LongWritable, LongWritable, LongWritable> subgraph = new Subgraph<S, V, E, LongWritable, LongWritable, LongWritable>(
+          peer.getPeerIndex(), subgraphID);
+      for (IVertex<V, E, LongWritable, LongWritable> vertex : component) {
+        subgraph.addVertex(vertex);
+        vertexSubgraphMap.put(vertex.getVertexID(), subgraph.getSubgraphID());
+      }
+      partition.addSubgraph(subgraph);
+      String msg = peer.getPeerIndex() + "," + subgraphID.toString();
+      Message<LongWritable, LongWritable> subgraphLocationBroadcast = new Message<LongWritable, LongWritable>();
+      subgraphLocationBroadcast.setMessageType(IMessage.MessageType.SUBGRAPH);
+      ControlMessage controlInfo = new ControlMessage();
+      controlInfo
+          .setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
+      controlInfo.setextraInfo(msg.getBytes());
+      subgraphLocationBroadcast.setControlInfo(controlInfo);
+      for (String peerName : peer.getAllPeerNames()) {
+        peer.send(peerName, (Message<K, M>) subgraphLocationBroadcast);
+      }
+
+//      System.out.println("Subgraph " + subgraph.getSubgraphID() + "has "
+//          + subgraph.vertexCount() + " Vertices");
     }
   }
 }

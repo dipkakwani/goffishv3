@@ -125,7 +125,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       subgraphs++;
       partition.addSubgraph(subgraph);
       for (IVertex<V, E, I, J> vertex : subgraph.getLocalVertices()) {
-        System.out.print(vertex.getVertexID()+" "+peer.getPeerIndex()+"\t");
+        System.out.print(vertex.getVertexID()+" "+peer.getPeerIndex()+" ");
         for (IEdge<E, I, J> edges: vertex.outEdges()) {
           //take care of extra space in the end while comparing
           System.out.print(edges.getSinkVertexID()+" ");
