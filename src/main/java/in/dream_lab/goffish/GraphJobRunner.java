@@ -120,7 +120,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         //ReflectionUtils.newInstance(readerClass, params);
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     
-    int subgraphs = 0;
+    List<ISubgraph<S, V, E, I, J, K>> subgraph = reader.getSubgraphs();
+    
+/*    int subgraphs = 0;
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       subgraphs++;
       partition.addSubgraph(subgraph);
@@ -133,7 +135,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         System.out.println();
       }
     }
-    System.out.println(subgraphs);
+    System.out.println(subgraphs);*/
   }
   
   /*Initialize the  fields*/
@@ -289,7 +291,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   /* Sets global vote to halt to false if any of the peer is still active. */
   void parseHeartBeat(IMessage<K, M> message) {
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
-    String heartBeat = new String(content.getExtraInfo());
+    byte []heartBeatRaw = content.getExtraInfo().iterator().next().getBytes();
+    String heartBeat = new String(heartBeatRaw);
     //System.out.println("Heartbeat = "+ heartBeat);
     if (!heartBeat.equals("10"))
       globalVoteToHalt = false;
