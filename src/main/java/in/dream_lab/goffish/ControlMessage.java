@@ -19,6 +19,7 @@
  */
 package in.dream_lab.goffish;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -31,68 +32,51 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
-import com.google.common.collect.Lists;
-
 import in.dream_lab.goffish.humus.api.IControlMessage;
 
 public class ControlMessage implements IControlMessage{
 
   private IControlMessage.TransmissionType transmissionType;
-  private Text vertexValues = new Text("");
-  private List<BytesWritable> generalInfo;
-  //private byte[] generalInfo;
-  private int partitionID;
+  private int numOfValues = 0;
+  private final ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
   
   public ControlMessage() {
     transmissionType = IControlMessage.TransmissionType.NORMAL;
-    generalInfo = Lists.newArrayList();
-        //new ArrayList<BytesWritable>();
   }
   
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, transmissionType);
-//    int generalInfoSize = 0;//generalInfo.size();
-//    if (generalInfo!=null) {
-//      generalInfoSize = generalInfo.length;
-//      out.writeInt(generalInfoSize);
-//      out.write(generalInfo);
-//    }
-//    else
-//      out.writeInt(generalInfoSize); //0
-    out.writeInt(generalInfo.size());
-    for (BytesWritable info : generalInfo) {
-      info.write(out);
-    }
-    
-    if (isPartitionMessage()) {
-      out.writeInt(partitionID);
-    }
-    else if(isVertexMessage()) {
-      vertexValues.write(out);
-    }
+    out.writeInt(numOfValues);
+    out.writeInt(byteBuffer.size());
+    out.write(byteBuffer.toByteArray());
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     transmissionType = WritableUtils.readEnum(in, IControlMessage.TransmissionType.class);
-    //generalInfo.readFields(in);
-    int generalInfoSize;
-    generalInfoSize = in.readInt();
-    while(generalInfoSize-- > 0) {
-      BytesWritable info = new BytesWritable();
-      info.readFields(in);
-      generalInfo.add(info);
+    this.numOfValues = in.readInt();
+    int bytesLength = in.readInt();
+    byte[] temp = new byte[bytesLength];
+    in.readFully(temp);
+    byteBuffer.write(temp);
+  }
+  
+  public void add(byte[] value) {
+    try {
+      byteBuffer.write(value);
+      numOfValues++;
+    } catch (IOException e) {
+      e.printStackTrace();
     }
-/*    if (generalInfoSize>0) {
-      generalInfo = new byte[generalInfoSize];
-      in.readFully(generalInfo);
-    }*/
-    if (isPartitionMessage()) {
-      partitionID = in.readInt();
-    }
-    else if (isVertexMessage()) {
-      vertexValues.readFields(in);
+  }
+  
+  public void addValuesBytes(byte[] values, int numOfValues) {
+    try {
+      byteBuffer.write(values);
+      this.numOfValues += numOfValues;
+    } catch (IOException e) {
+      e.printStackTrace();
     }
   }
 
@@ -103,31 +87,6 @@ public class ControlMessage implements IControlMessage{
   
   public void setTransmissionType(IControlMessage.TransmissionType transmissionType) {
     this.transmissionType = transmissionType;
-  }
-  
-  public void setPartitionID(int partitionID) {
-    this.setPartitionID(partitionID);
-  }
-  
-  public void setVertexValues(String vertex) {
-    this.vertexValues = new Text(vertex);
-  }
-  
-  //to be removed when list implementation of addextrainfo is completed
-  @Deprecated
-  public void setextraInfo(byte b[]) {
-//    this.generalInfo = b;
-    BytesWritable info = new BytesWritable(b);
-    this.generalInfo.add(info);
-  }
-  
-  public void addextraInfo(byte b[]) {
-    BytesWritable info = new BytesWritable(b);
-    this.generalInfo.add(info);
-  }
-  
-  public  Iterable<BytesWritable> getExtraInfo() {
-    return generalInfo;
   }
   
   public boolean isNormalMessage() {
@@ -147,15 +106,7 @@ public class ControlMessage implements IControlMessage{
 
   @Override
   public String toString() {
-    if(isPartitionMessage()) {
-      return String.valueOf(partitionID);
-    }
-    else if (isVertexMessage()) {
-      return vertexValues.toString();
-    }
-    else {
-      return null;
-    }
+    return byteBuffer.toString();
   }
   
 }

@@ -86,6 +86,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
 
   private static final long INITIALIZATION_SUPERSTEPS = 3;
   
+  // Data structures for grouping messages into a single Message.
+  private final Map<Integer, Message<K, M>> partitionMessages = new HashMap<Integer, Message<K, M>>();
+  private final List<Message<K, M>> broadcastMessages = new ArrayList<Message<K, M>>();
+  
   /* Maintains statistics about graph job. Updated by master. */
   public static enum GraphJobCounter {
     ACTIVE_SUBGRAPHS
@@ -160,12 +164,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
     
-    /*TODO: Make execute subgraphs compute in parallel.
-    ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
-        .newCachedThreadPool();
-    executor.setMaximumPoolSize(64);*/
-    //System.out.println("BSP method at superstep "+peer.getSuperstepCount());
-    
     /*
      * Creating SubgraphCompute objects
      */
@@ -186,7 +184,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
-      //System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
@@ -195,6 +192,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       
       if (globalVoteToHalt && isMasterTask(peer)) {
         notifyJobEnd();
+        finishSuperstep();
         peer.sync();    // Wait for all the peers to receive the message in next superstep.
         break;
       }
@@ -221,7 +219,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
       }
       sendHeartBeat();
-      
+      finishSuperstep();
       peer.sync();
     }
 
@@ -235,6 +233,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
       //System.out.println(subgraph.getSubgraph().getValue());
     }
+  }
+  
+  /* Called at the end of each superstep. Flushes out messages. */
+  void finishSuperstep() {
   }
 
   /*
@@ -324,9 +326,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
  
   /* Sends message to all the peers. */
   void sendToAll(Message<K, M> message) {
-    for (String peerName : peer.getAllPeerNames()) {
+    for (String peerName : peer.getAllPeerNames()) 
       sendMessage(peerName, message);
-    }
   }
   
   void sendMessage(K subgraphID, M message) {
