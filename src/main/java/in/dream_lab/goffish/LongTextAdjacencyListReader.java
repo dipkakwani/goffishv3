@@ -206,11 +206,13 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
      * partitionID remotevertex1 remotevertex2 ...
      */
     byte partitionIDbytes[] = Ints.toByteArray(peer.getPeerIndex());
+    System.out.println("PArtition ID "+peer.getPeerIndex()+" "+partitionIDbytes);
     controlInfo.addextraInfo(partitionIDbytes);
     question.setControlInfo(controlInfo);
     for (IVertex<V, E, LongWritable, LongWritable> v : vertexMap.values()) {
       if (v instanceof RemoteVertex) {
         byte vertexIDbytes[] = Longs.toByteArray(v.getVertexID().get());
+        System.out.println("REmote Vertex "+v.getVertexID().get()+" "+vertexIDbytes);
         controlInfo.addextraInfo(vertexIDbytes);
       }
     }
@@ -220,6 +222,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     System.out.println("Next SuperStep");
 
     Map<Integer, List<Message<LongWritable, LongWritable>>> replyMessages = new HashMap<Integer, List<Message<LongWritable, LongWritable>>>();
+    //Receiving 1 message per partition
     while ((msg = (Message<LongWritable, LongWritable>) peer.getCurrentMessage()) != null) {
       /*
        * Subgraph Partition mapping broadcast
@@ -257,6 +260,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       subgraphIDReply.setControlInfo(controlInfo);
       
       Integer sinkPartition = Ints.fromByteArray(RemoteVertexQuery.iterator().next().getBytes());
+      boolean hasAVertex = false;
       for (BytesWritable remoteVertex : Iterables.skip(RemoteVertexQuery,1)) {
         LongWritable sinkID = new LongWritable(Ints.fromByteArray(remoteVertex.getBytes()));
         LongWritable sinkSubgraphID = vertexSubgraphMap.get(sinkID);
@@ -264,16 +268,20 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         if (sinkSubgraphID == null) {
           continue;
         }
+        hasAVertex = true;
         byte sinkIDbytes[] = Longs.toByteArray(sinkID.get());
         controlInfo.addextraInfo(sinkIDbytes);
-        byte partitionbytes[] = Ints.toByteArray(sinkPartition.intValue());
-        controlInfo.addextraInfo(partitionbytes);
+        byte subgraphIDbytes[] = Longs.toByteArray(sinkSubgraphID.get());
+        controlInfo.addextraInfo(subgraphIDbytes);
       }
-      peer.send(peer.getPeerName(sinkPartition.intValue()), (Message<K, M>) subgraphIDReply);
+      if (hasAVertex) {
+        peer.send(peer.getPeerName(sinkPartition.intValue()),
+            (Message<K, M>) subgraphIDReply);
+      }
     }
     peer.sync();
-    //System.out.println("Messages to all neighbours sent");
-    
+    // System.out.println("Messages to all neighbours sent");
+
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       Iterable<BytesWritable> remoteVertexReply = ((ControlMessage) msg
           .getControlInfo()).getExtraInfo();
@@ -284,6 +292,9 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         LongWritable remoteSubgraphID = new LongWritable(Longs.fromByteArray(queryResponse.next().getBytes()));
         RemoteVertex<V, E, LongWritable, LongWritable, LongWritable> sink =(RemoteVertex<V, E, LongWritable, LongWritable, LongWritable>) vertexMap.get(sinkID);
         assert(sink!=null);
+        if (sink == null) {
+          System.out.println("NULLLL");
+        }
         sink.setSubgraphID(remoteSubgraphID);
       }
     }
@@ -303,6 +314,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     }
     
   }
+  
   private void sendToAllPartitions(Message<LongWritable, LongWritable> message) throws IOException {
     for (String peerName : peer.getAllPeerNames()) {
       peer.send(peerName, (Message<K, M>) message);
@@ -394,7 +406,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
       assert(component.size()==1 ?
           (component.iterator().next() instanceof RemoteVertex ? false : true) :
             true);
-      
+/*      
       System.out.print(subgraphID);
       for (IVertex<V, E, LongWritable, LongWritable> vertex : component) {
         subgraph.addVertex(vertex);
@@ -402,6 +414,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         System.out.print(" "+vertex.getVertexID());
       }
       System.out.println();
+      */
       partition.addSubgraph(subgraph);
       String msg = peer.getPeerIndex() + "," + subgraphID.toString();
       Message<LongWritable, LongWritable> subgraphLocationBroadcast = new Message<LongWritable, LongWritable>();
