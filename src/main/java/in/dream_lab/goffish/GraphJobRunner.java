@@ -40,6 +40,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.net.Peer;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
@@ -70,6 +71,10 @@ import in.dream_lab.goffish.humus.api.IReader;
 import org.apache.hama.util.ReflectionUtils;
 import org.apache.hama.util.UnsafeByteArrayInputStream;
 import org.apache.hama.util.WritableUtils;
+
+import com.google.common.collect.Iterables;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 
 import in.dream_lab.goffish.sample.VertexCount;
 import in.dream_lab.goffish.sample.ConnectedComponents;;
@@ -108,6 +113,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
 
     //System.out.println("BSP Setup");
     setupfields(peer);
+    
     /*TODO: Read input reader class type from Hama conf. 
      * FIXME:Make type of Message generic in Reader. */
 
@@ -120,9 +126,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         //ReflectionUtils.newInstance(readerClass, params);
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     
-    List<ISubgraph<S, V, E, I, J, K>> subgraph = reader.getSubgraphs();
+    //List<ISubgraph<S, V, E, I, J, K>> subgraph = reader.getSubgraphs();
     
-/*    int subgraphs = 0;
+    int subgraphs = 0;
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       subgraphs++;
       partition.addSubgraph(subgraph);
@@ -135,7 +141,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         System.out.println();
       }
     }
-    System.out.println(subgraphs);*/
+    System.out.println(subgraphs);
   }
   
   /*Initialize the  fields*/
@@ -172,12 +178,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
-      SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
-      //SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
+      //SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
+      SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
       subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
     }
+    System.out.println("Subgraph runneers"+subgraphs.size());
     
     
     while (!globalVoteToHalt) {     
@@ -203,7 +210,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
 
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-        //System.out.println("Calling compute with vertices"+subgraph.getSubgraph().localVertexCount());
+        System.out.println("Calling compute with vertices "+subgraph.getSubgraph().localVertexCount());
         boolean hasMessages = false;
         List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
         if (messagesToSubgraph != null) {
@@ -223,6 +230,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       sendHeartBeat();
       
       peer.sync();
+
     }
 
   }
@@ -231,9 +239,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
-    //System.out.println("Clean up!");
+    System.out.println("Clean up!");
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      //System.out.println(subgraph.getSubgraph().getValue());
+      System.out.println(subgraph.getSubgraph().getValue());
     }
   }
 

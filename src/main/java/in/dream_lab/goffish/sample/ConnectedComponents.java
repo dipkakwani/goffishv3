@@ -65,9 +65,9 @@ public class ConnectedComponents {
           LongWritable msg = new LongWritable(minSubgraphID);
           sendToNeighbors(msg);
         }
-        System.out.println("Superstep "+ getSuperStep() + " Subgraph " + getSubgraph().getSubgraphID() + " value " + getSubgraph().getValue());
+        //System.out.println("Superstep "+ getSuperStep() + " Subgraph " + getSubgraph().getSubgraphID() + " value " + getSubgraph().getValue());
       }
-      System.out.println("Subgraph " + getSubgraph().getSubgraphID() + " in superstep " + getSuperStep() + " value " + getSubgraph().getValue());
+      //System.out.println("Subgraph " + getSubgraph().getSubgraphID() + " in superstep " + getSuperStep() + " value " + getSubgraph().getValue());
       voteToHalt();
     }
   

@@ -32,36 +32,37 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 import com.google.common.collect.Lists;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 
 import in.dream_lab.goffish.humus.api.IControlMessage;
 
-public class ControlMessage implements IControlMessage{
+class ControlMessage implements IControlMessage{
 
   private IControlMessage.TransmissionType transmissionType;
   private Text vertexValues = new Text("");
-  private List<BytesWritable> generalInfo;
-  //private byte[] generalInfo;
+  private List<BytesWritable> extraInfo;
   private int partitionID;
   
   public ControlMessage() {
     transmissionType = IControlMessage.TransmissionType.NORMAL;
-    generalInfo = Lists.newArrayList();
-        //new ArrayList<BytesWritable>();
+    extraInfo = Lists.newArrayList();
   }
   
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, transmissionType);
-//    int generalInfoSize = 0;//generalInfo.size();
-//    if (generalInfo!=null) {
-//      generalInfoSize = generalInfo.length;
-//      out.writeInt(generalInfoSize);
-//      out.write(generalInfo);
+//    int extraInfoSize = 0;//extraInfo.size();
+//    if (extraInfo!=null) {
+//      extraInfoSize = extraInfo.length;
+//      out.writeInt(extraInfoSize);
+//      out.write(extraInfo);
 //    }
 //    else
-//      out.writeInt(generalInfoSize); //0
-    out.writeInt(generalInfo.size());
-    for (BytesWritable info : generalInfo) {
+//      out.writeInt(extraInfoSize); //0
+    out.writeInt(extraInfo.size());
+    for (BytesWritable info : extraInfo) {
+      //System.out.println("Writing"+Ints.fromByteArray(info.copyBytes()));
       info.write(out);
     }
     
@@ -76,18 +77,14 @@ public class ControlMessage implements IControlMessage{
   @Override
   public void readFields(DataInput in) throws IOException {
     transmissionType = WritableUtils.readEnum(in, IControlMessage.TransmissionType.class);
-    //generalInfo.readFields(in);
-    int generalInfoSize;
-    generalInfoSize = in.readInt();
-    while(generalInfoSize-- > 0) {
+    int extraInfoSize;
+    extraInfoSize = in.readInt();
+    while(extraInfoSize-- > 0) {
       BytesWritable info = new BytesWritable();
       info.readFields(in);
-      generalInfo.add(info);
+      //System.out.println("Reading "+Ints.fromByteArray(info.getBytes()));
+      extraInfo.add(info);
     }
-/*    if (generalInfoSize>0) {
-      generalInfo = new byte[generalInfoSize];
-      in.readFully(generalInfo);
-    }*/
     if (isPartitionMessage()) {
       partitionID = in.readInt();
     }
@@ -116,18 +113,21 @@ public class ControlMessage implements IControlMessage{
   //to be removed when list implementation of addextrainfo is completed
   @Deprecated
   public void setextraInfo(byte b[]) {
-//    this.generalInfo = b;
+//    this.extraInfo = b;
     BytesWritable info = new BytesWritable(b);
-    this.generalInfo.add(info);
+    this.extraInfo.add(info);
   }
   
   public void addextraInfo(byte b[]) {
     BytesWritable info = new BytesWritable(b);
-    this.generalInfo.add(info);
+    this.extraInfo.add(info);
   }
   
   public  Iterable<BytesWritable> getExtraInfo() {
-    return generalInfo;
+    //for (BytesWritable i : extraInfo) {
+      //System.out.println("Returning "+Ints.fromByteArray(i.getBytes()));
+    //}
+    return extraInfo;
   }
   
   public boolean isNormalMessage() {
