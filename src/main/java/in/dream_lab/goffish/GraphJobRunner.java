@@ -210,7 +210,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
 
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-        System.out.println("Calling compute with vertices "+subgraph.getSubgraph().localVertexCount());
+        //System.out.println("Calling compute with vertices "+subgraph.getSubgraph().localVertexCount());
         boolean hasMessages = false;
         List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
         if (messagesToSubgraph != null) {
@@ -230,6 +230,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       sendHeartBeat();
       
       peer.sync();
+      
+      //Debug break after first superstep
+      //break;
 
     }
 
@@ -254,10 +257,11 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     Message<K, M> msg = new Message<K, M>();
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.HEARTBEAT);
-    String allVotedToHaltMsg = (allVotedToHalt) ? "1" : "0";
-    String messageInFlightMsg = (messageInFlight) ? "1" : "0";
-    String heartBeatMsg = allVotedToHaltMsg + messageInFlightMsg;
-    controlInfo.setextraInfo(heartBeatMsg.getBytes());
+    int allVotedToHaltMsg = (allVotedToHalt) ? 1 : 0;
+    int messageInFlightMsg = (messageInFlight) ? 1 : 0;
+    int heartBeatMsg = allVotedToHaltMsg << 1 + messageInFlightMsg;
+    System.out.println("Sending heartbeat = "+heartBeatMsg);
+    controlInfo.addextraInfo(Ints.toByteArray(heartBeatMsg));
     msg.setControlInfo(controlInfo);
     sendMessage(peer.getPeerName(getMasterTaskIndex()), msg);
   }
@@ -300,9 +304,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   void parseHeartBeat(IMessage<K, M> message) {
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
     byte []heartBeatRaw = content.getExtraInfo().iterator().next().getBytes();
-    String heartBeat = new String(heartBeatRaw);
-    //System.out.println("Heartbeat = "+ heartBeat);
-    if (!heartBeat.equals("10"))
+    int heartBeat = Ints.fromByteArray(heartBeatRaw);
+    System.out.println("Heartbeat = "+ heartBeat);
+    if (heartBeat != 2) // Heartbeat msg = 0x10 when some subgraphs are still active
       globalVoteToHalt = false;
   }
 
