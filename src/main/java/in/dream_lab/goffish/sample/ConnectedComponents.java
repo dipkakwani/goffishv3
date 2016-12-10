@@ -19,6 +19,9 @@ package in.dream_lab.goffish.sample;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.fs.Path;
@@ -40,14 +43,19 @@ public class ConnectedComponents {
     
     @Override
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
+
       if (getSuperStep() == 0) {
-        minSubgraphID = getSubgraph().getSubgraphID().get();       
+        minSubgraphID = getSubgraph().getSubgraphID().get();
+        int remoteCount = 0;
         for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()
             .getRemoteVertices()) {
           if (minSubgraphID > vertex.getSubgraphID().get()) {
             minSubgraphID = vertex.getSubgraphID().get();
           }
+          remoteCount++;
+          //System.out.println("REMOTE Vertex " + vertex.getVertexID() + " subgraph " + vertex.getSubgraphID().get());
         }
+        //System.out.println("TOTAL remote vertices" + remoteCount);
         LongWritable msg = new LongWritable(minSubgraphID);
         sendToNeighbors(msg);
         getSubgraph().setValue(new LongWritable(minSubgraphID));

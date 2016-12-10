@@ -29,6 +29,7 @@ import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.SubgraphCompute;
+import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IMessage;
 
 public class VertexCount {
@@ -41,16 +42,35 @@ public class VertexCount {
         long count = getSubgraph().localVertexCount();
 //        System.out.println("Number of local vertices = " + count);
 
+
+        count = 0;
+        for (IEdge<LongWritable, LongWritable, LongWritable> e : getSubgraph().getEdges()) {
+          count++;
+        }
         LongWritable message = new LongWritable(count);
         sendToAll(message);
 
       } else {
+        
+        long totalEdges = 0;
+        for (IMessage<LongWritable, LongWritable> msg : messages) {
+          LongWritable count= msg.getMessage();
+          totalEdges += count.get();
+        }
+        /*
+        for (IEdge<LongWritable, LongWritable, LongWritable> e : getSubgraph().getEdges()) {
+          if (getSubgraph().getVertexByID(e.getSinkVertexID()).isRemote())
+            totalEdges--;
+        }*/
+        System.out.println("Total edges = " + totalEdges);
+        
+        /*
         long totalVertices = 0;
         for (IMessage<LongWritable, LongWritable> msg : messages) {
           LongWritable count= msg.getMessage();
           totalVertices += count.get();
         }
-//        System.out.println("Total vertices = " + totalVertices);
+        System.out.println("Total vertices = " + totalVertices);*/
         try {
           //Use OutputWriter
         }

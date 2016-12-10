@@ -76,8 +76,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 
-import in.dream_lab.goffish.sample.VertexCount;
-import in.dream_lab.goffish.sample.ConnectedComponents;;
+import in.dream_lab.goffish.sample.*;
 /**
  * Fully generic graph job runner.
  * 
@@ -128,6 +127,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     
     //List<ISubgraph<S, V, E, I, J, K>> subgraph = reader.getSubgraphs();
     
+    for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
+      partition.addSubgraph(subgraph);
+    }
+    /*
     int subgraphs = 0;
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       subgraphs++;
@@ -142,6 +145,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
     }
     System.out.println(subgraphs);
+    */
   }
   
   /*Initialize the  fields*/
@@ -178,14 +182,15 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       
       /* FIXME: Read generic types from configuration and make subgraph object generic. */
+      //SubgraphCompute subgraphComputeRunner = new EdgeList.VrtxCnt();
+      SubgraphCompute subgraphComputeRunner = new MetaGraph.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
-      SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
+      //SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
       subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
       subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
       subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
     }
-    System.out.println("Subgraph runneers"+subgraphs.size());
-    
+    //System.out.println("Subgraph runneers"+subgraphs.size());
     
     while (!globalVoteToHalt) {     
       List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
@@ -242,10 +247,11 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
-    System.out.println("Clean up!");
+    //System.out.println("Clean up!");
+    /*
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
       System.out.println(subgraph.getSubgraph().getValue());
-    }
+    }*/
   }
 
   /*
@@ -260,7 +266,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     int allVotedToHaltMsg = (allVotedToHalt) ? 1 : 0;
     int messageInFlightMsg = (messageInFlight) ? 1 : 0;
     int heartBeatMsg = allVotedToHaltMsg << 1 + messageInFlightMsg;
-    System.out.println("Sending heartbeat = "+heartBeatMsg);
+    //System.out.println("Sending heartbeat = "+heartBeatMsg);
     controlInfo.addextraInfo(Ints.toByteArray(heartBeatMsg));
     msg.setControlInfo(controlInfo);
     sendMessage(peer.getPeerName(getMasterTaskIndex()), msg);
@@ -305,7 +311,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
     byte []heartBeatRaw = content.getExtraInfo().iterator().next().getBytes();
     int heartBeat = Ints.fromByteArray(heartBeatRaw);
-    System.out.println("Heartbeat = "+ heartBeat);
+    //System.out.println("Heartbeat = "+ heartBeat);
     if (heartBeat != 2) // Heartbeat msg = 0x10 when some subgraphs are still active
       globalVoteToHalt = false;
   }
