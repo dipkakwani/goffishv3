@@ -124,27 +124,41 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
         //ReflectionUtils.newInstance(readerClass, params);
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
+        //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextJSONReader<>(peer, subgraphPartitionMap);
     
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       partition.addSubgraph(subgraph);
     }
+    
     /*
      * For Giraph input generator
+     * 
     int subgraphs = 0;
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       subgraphs++;
       partition.addSubgraph(subgraph);
+      
+      System.out.print(subgraph.getSubgraphID()+"\t"+peer.getPeerIndex());
+      //to store unique neighbours
+      Map<K,Integer> neighbourSubgraphMap = new HashMap<>();
+      for (IRemoteVertex<V, E, I, J, K> remote : subgraph.getRemoteVertices()) {
+        neighbourSubgraphMap.put(remote.getSubgraphID(), subgraphPartitionMap.get(remote.getSubgraphID()));
+      }
+      for (Map.Entry<K, Integer> entry : neighbourSubgraphMap.entrySet()) {
+        System.out.print("\t"+entry.getKey()+"\t"+entry.getValue());
+      }
+      System.out.println();
       for (IVertex<V, E, I, J> vertex : subgraph.getLocalVertices()) {
-        System.out.print(vertex.getVertexID()+" "+peer.getPeerIndex()+" ");
+        System.out.print(vertex.getVertexID()+"\t"+"0");
         for (IEdge<E, I, J> edges: vertex.outEdges()) {
           //take care of extra space in the end while comparing
-          System.out.print(edges.getSinkVertexID()+" ");
+          System.out.print("\t"+edges.getSinkVertexID());
         }
         System.out.println();
       }
-    }
-    System.out.println(subgraphs);
-    */
+    }*/
+    //System.out.println(subgraphs);
+    
   }
   
   /*Initialize the  fields*/
@@ -240,7 +254,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //System.out.println("Clean up!");
     
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      System.out.println(subgraph.getSubgraph().getValue());
+      //System.out.println(subgraph.getSubgraph().getValue());
     }
   }
 
