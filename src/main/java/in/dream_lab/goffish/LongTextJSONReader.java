@@ -128,6 +128,7 @@ public class LongTextJSONReader<S extends Writable, V extends Writable, E extend
     
     //End of first SuperStep
     peer.sync();
+    
     Message<LongWritable, LongWritable> msg;
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
       String JSONVertex = msg.getControlInfo().toString();

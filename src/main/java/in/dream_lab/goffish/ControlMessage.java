@@ -52,14 +52,6 @@ class ControlMessage implements IControlMessage{
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, transmissionType);
-//    int extraInfoSize = 0;//extraInfo.size();
-//    if (extraInfo!=null) {
-//      extraInfoSize = extraInfo.length;
-//      out.writeInt(extraInfoSize);
-//      out.write(extraInfo);
-//    }
-//    else
-//      out.writeInt(extraInfoSize); //0
     out.writeInt(extraInfo.size());
     for (BytesWritable info : extraInfo) {
       //System.out.println("Writing"+Ints.fromByteArray(info.copyBytes()));

@@ -54,6 +54,7 @@ import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
+import org.apache.hama.bsp.PartitioningRunner;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 
@@ -92,8 +93,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   /* Maintains statistics about graph job. Updated by master. */
   public static enum GraphJobCounter {
-    ACTIVE_SUBGRAPHS
+    ACTIVE_SUBGRAPHS, VERTEX_COUNT, EDGE_COUNT
   }
+  
+  public static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
   
   private Partition<S, V, E, I, J, K> partition;
   private BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
@@ -198,10 +201,11 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       //SubgraphCompute subgraphComputeRunner = new EdgeList.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new MetaGraph.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
-      SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
-      subgraphComputeRunner.setSubgraph((ISubgraph<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)subgraph);
-      subgraphComputeRunner.init((GraphJobRunner<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) this);
-      subgraphs.add((SubgraphCompute<S, V, E, M, I, J, K>) subgraphComputeRunner);
+      //SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
+      SubgraphCompute subgraphComputeRunner = new TriangleCount();
+      subgraphComputeRunner.setSubgraph(subgraph);
+      subgraphComputeRunner.init(this);
+      subgraphs.add(subgraphComputeRunner);
     }
     
     while (!globalVoteToHalt) {     
@@ -254,7 +258,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //System.out.println("Clean up!");
     
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      //System.out.println(subgraph.getSubgraph().getValue());
+      System.out.println(subgraph.getSubgraph().getValue());
     }
   }
 
