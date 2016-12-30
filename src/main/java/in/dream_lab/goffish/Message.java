@@ -22,6 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
@@ -113,8 +114,10 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     }
     hasMessage = in.readBoolean();
     if (hasMessage) {
-      //TODO : use reflectionUtils to instatiate message
-      this.message = (M)new LongWritable();
+      // TODO : use reflectionUtils to instantiate message
+      /* FIXME: The type of message depends on the application. In triangle count it is Text
+                and in other samples it is LongWritable. */ 
+      this.message = (M)new Text();
       message.readFields(in);
     }    
   }
