@@ -69,6 +69,7 @@ class ControlMessage implements IControlMessage{
   @Override
   public void readFields(DataInput in) throws IOException {
     transmissionType = WritableUtils.readEnum(in, IControlMessage.TransmissionType.class);
+    extraInfo = Lists.newArrayList();
     int extraInfoSize;
     extraInfoSize = in.readInt();
     while(extraInfoSize-- > 0) {

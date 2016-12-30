@@ -307,6 +307,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         assert(isMasterTask(peer));
         parseHeartBeat(message);
       }
+      else {
+        System.out.println("Invalid transmission type!");
+      }
       /*
        * TODO: Add implementation for partition message and vertex message(used for graph mutation)
        */

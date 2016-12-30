@@ -109,7 +109,7 @@ public class TriangleCount extends
             continue;
 
           if (adjVertex.isRemote()) {
-            continue;  //as it has no outedges
+            continue;  //as it has no outedges DIP: Not required, see the above condition.
           }
           // Counting triangles which have at least two vertices in the same
           // subgraph.
