@@ -22,6 +22,7 @@ import java.util.Collection;
 
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
@@ -95,5 +96,6 @@ public class VertexCount {
 	  pageJob.setInputPath(new Path(args[0]));
 	  pageJob.setOutputPath(new Path(args[1]));
 	  pageJob.waitForCompletion(true);
+	  pageJob.setGraphMessageClass(ArrayWritable.class);
   }
 }

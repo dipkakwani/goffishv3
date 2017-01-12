@@ -25,6 +25,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.humus.api.IControlMessage;
@@ -58,8 +59,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     this.hasSubgraphID = true;
   }
   
-  
-  
+   
   public void setControlInfo(IControlMessage controlMessage) {
     this.control = controlMessage;
   }
@@ -117,7 +117,9 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
       // TODO : use reflectionUtils to instantiate message
       /* FIXME: The type of message depends on the application. In triangle count it is Text
                 and in other samples it is LongWritable. */ 
-      this.message = (M)new Text();
+      this.message = (M)ReflectionUtils.newInstance(GraphJobRunner.GRAPH_MESSAGE_CLASS, null);
+      
+      //this.message = (M)new Text();
       message.readFields(in);
     }    
   }

@@ -103,6 +103,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   private HamaConfiguration conf;
   private Map<K, Integer> subgraphPartitionMap;
   private static Class<?> SUBGRAPH_CLASS;
+  public static Class<? extends Writable> GRAPH_MESSAGE_CLASS;
+  
   //public static Class<Subgraph<?, ?, ?, ?, ?, ?, ?>> subgraphClass;
   private Map<K, List<IMessage<K, M>>> subgraphMessageMap;
   private List<SubgraphCompute<S, V, E, M, I, J, K>> subgraphs=new ArrayList<SubgraphCompute<S, V, E, M, I, J, K>>();
@@ -165,6 +167,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   }
   
   /*Initialize the  fields*/
+  @SuppressWarnings("unchecked")
   private void setupfields(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer) {
     
@@ -177,6 +180,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         "hama.subgraph.class", Subgraph.class);
     SUBGRAPH_CLASS = subgraphClass;
     */
+    //System.out.println("Message type " + conf.get(GraphJob.GRAPH_MESSAGE_CLASS_ATTR));
+    Class<M> graphMessageClass = (Class<M>) conf.getClass(
+        GraphJob.GRAPH_MESSAGE_CLASS_ATTR, IntWritable.class, Writable.class);
+    GRAPH_MESSAGE_CLASS = graphMessageClass;
     
   }
 

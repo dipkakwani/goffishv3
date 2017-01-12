@@ -14,7 +14,7 @@
 *  specific language governing permissions and limitations
 *  under the License.
 */
-package in.dream_lab.goffish;
+package in.dream_lab.goffish.utils;
 
 import java.util.*;
 

@@ -14,12 +14,14 @@ import java.util.TreeMap;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 
 import in.dream_lab.goffish.SubgraphCompute;
 import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.IVertex;
+import in.dream_lab.goffish.utils.LongArrayListWritable;
 
 /*
  * Ported from goffish v2
@@ -54,7 +56,7 @@ import in.dream_lab.goffish.api.IVertex;
  */
 
 public class TriangleCount extends
-    SubgraphCompute<LongWritable, LongWritable, LongWritable, Text, LongWritable, LongWritable, LongWritable> {
+    SubgraphCompute<LongWritable, LongWritable, LongWritable, LongArrayListWritable, LongWritable, LongWritable, LongWritable> {
   private long triangleCount, totalCount;
   StringBuilder trianglesList;
   Map<Long, Set<Long>> adjSet;
@@ -71,11 +73,11 @@ public class TriangleCount extends
   }
 
   @Override
-  public void compute(Collection<IMessage<LongWritable, Text>> messageList) {
+  public void compute(Collection<IMessage<LongWritable, LongArrayListWritable>> messageList) {
 
     // Convert adjacency list to adjacency set
     if (getSuperStep() == 0) {
-      trianglesList = new StringBuilder();
+      //trianglesList = new StringBuilder();
       adjSet = new HashMap<Long, Set<Long>>();
       for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph().getLocalVertices()) {
         Set<Long> adjVertices = new HashSet<Long>();
@@ -86,7 +88,7 @@ public class TriangleCount extends
       }
       return;
     } else if (getSuperStep() == 1) {
-      Map<Long, StringBuilder> msg = new HashMap<Long, StringBuilder>();
+      Map<Long, LongArrayListWritable> msg = new HashMap<Long, LongArrayListWritable>();
       for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()
           .getLocalVertices()) {
         for (IEdge<LongWritable, LongWritable, LongWritable> edge : vertex.outEdges()) {
@@ -97,19 +99,20 @@ public class TriangleCount extends
           if (adjVertex.isRemote() && adjVertex.getVertexID().get() > vertex.getVertexID().get()) {
             long remoteSubgraphId = ((IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)adjVertex)
                 .getSubgraphID().get();
-            StringBuilder vertexIds = msg.get(remoteSubgraphId);
+            LongArrayListWritable vertexIds = msg.get(remoteSubgraphId);
             if (vertexIds == null) {
-              vertexIds = new StringBuilder();
+              vertexIds = new LongArrayListWritable();
               msg.put(remoteSubgraphId, vertexIds);
             }
-            vertexIds.append(adjVertex.getVertexID().get()).append(' ')
-                .append(vertex.getVertexID().get()).append(' ').append(vertex.getVertexID().get())
-                .append(';');
+            vertexIds.add(adjVertex.getVertexID());
+            vertexIds.add(vertex.getVertexID());
+            vertexIds.add(vertex.getVertexID());
+                
           } else if (adjVertex.isRemote() || vertex.getVertexID().get() > adjVertex.getVertexID().get())
             continue;
 
           if (adjVertex.isRemote()) {
-            continue;  //as it has no outedges DIP: Not required, see the above condition.
+            continue;  //as it has no outedges
           }
           // Counting triangles which have at least two vertices in the same
           // subgraph.
@@ -120,8 +123,8 @@ public class TriangleCount extends
 
               if (adjSet.get(vertex.getVertexID().get()).contains(adjAdjVertex.getVertexID().get())) {
                 triangleCount++;
-                trianglesList.append(vertex.getVertexID().get() + " " + adjVertex.getVertexID().get()
-                    + " " + adjAdjVertex.getVertexID().get() + "\n");
+                //trianglesList.append(vertex.getVertexID().get() + " " + adjVertex.getVertexID().get()
+                  //  + " " + adjAdjVertex.getVertexID().get() + "\n");
               }
             }
           }
@@ -132,7 +135,7 @@ public class TriangleCount extends
       Map<Long, List<Pair<Long, Long>>> ids = new HashMap<Long, List<Pair<Long, Long>>>();
       unpackMessages(messageList, ids);
 
-      Map<Long, StringBuilder> msg = new HashMap<Long, StringBuilder>();
+      Map<Long, LongArrayListWritable> msg = new HashMap<Long, LongArrayListWritable>();
       for (Map.Entry<Long, List<Pair<Long, Long>>> entry : ids.entrySet()) {
         IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex = getSubgraph().getVertexByID(new LongWritable(entry.getKey()));
         List<Pair<Long, Long>> idPairs = entry.getValue();
@@ -141,18 +144,20 @@ public class TriangleCount extends
           if (adjVertex.isRemote() && adjVertex.getVertexID().get() > vertex.getVertexID().get()) {
             long remoteSubgraphId = ((IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>)adjVertex)
                 .getSubgraphID().get();
-            StringBuilder vertexIds = msg.get(remoteSubgraphId);
+            LongArrayListWritable vertexIds = msg.get(remoteSubgraphId);
             if (vertexIds == null) {
-              vertexIds = new StringBuilder();
+              vertexIds = new LongArrayListWritable();
               msg.put(remoteSubgraphId, vertexIds);
             }
             for (Pair<Long, Long> id : idPairs) {
+              LongWritable firstId = new LongWritable(id.first);
               IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> sinkSubgraphID = (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> )
-              getSubgraph().getVertexByID(new LongWritable(id.first));
-              if (sinkSubgraphID.getSubgraphID().get() != remoteSubgraphId)
-                vertexIds.append(adjVertex.getVertexID().get()).append(' ').append(id.first)
-                    .append(' ').append(vertex.getVertexID().get()).append(';');
-          
+              getSubgraph().getVertexByID(firstId);
+              if (sinkSubgraphID.getSubgraphID().get() != remoteSubgraphId) {
+                vertexIds.add(adjVertex.getVertexID());
+                vertexIds.add(firstId);
+                vertexIds.add(vertex.getVertexID());
+              }
             }
           }
         }
@@ -168,8 +173,8 @@ public class TriangleCount extends
           for (IEdge<LongWritable, LongWritable, LongWritable> edge : vertex.outEdges()) {
             if (edge.getSinkVertexID().get() == p.first) {
               triangleCount++;
-              trianglesList.append(
-                  vertex.getVertexID().get() + " " + p.first + " " + p.second + "\n");
+              //trianglesList.append(
+               //   vertex.getVertexID().get() + " " + p.first + " " + p.second + "\n");
             }
           }
         }
@@ -180,11 +185,10 @@ public class TriangleCount extends
     voteToHalt();
   }
 
-  void sendPackedMessages(Map<Long, StringBuilder> msg) {
-    for (Map.Entry<Long, StringBuilder> m : msg.entrySet()) {
-      if (!m.getValue().toString().isEmpty()) {
-        Text message = new Text(m.getValue().toString());
-        sendMessage(new LongWritable(m.getKey()), message);
+  void sendPackedMessages(Map<Long, LongArrayListWritable> msg) {
+    for (Map.Entry<Long, LongArrayListWritable> m : msg.entrySet()) {
+      if (!m.getValue().isEmpty()) {
+        sendMessage(new LongWritable(m.getKey()), m.getValue());
       }
     }
   }
@@ -193,17 +197,15 @@ public class TriangleCount extends
    * Unpacks the messages such that there is a list of pair of message vertex id
    * and source vertex Ids associated with the each target vertex.
    */
-  void unpackMessages(Collection<IMessage<LongWritable, Text>> messageList,
+  void unpackMessages(Collection<IMessage<LongWritable, LongArrayListWritable>> messageList,
       Map<Long, List<Pair<Long, Long>>> ids) {
-    String[] message = null;
-    for (IMessage<LongWritable, Text> messageItem : messageList) {
-      message = messageItem.getMessage().toString().split(";");
-      for (String msg : message) {
-        String[] m = msg.split(" ");
-        Long targetId = Long.parseLong(m[0]);
-        Long messageId = Long.parseLong(m[1]);
-        Long sourceId = Long.parseLong(m[2]);
-
+    for (IMessage<LongWritable, LongArrayListWritable> messageItem : messageList) {
+      LongArrayListWritable message = messageItem.getMessage();
+      for (int i = 0; i < message.size(); i += 3) {
+        Long targetId = ((LongWritable)message.get(i)).get();
+        Long messageId = ((LongWritable)message.get(i + 1)).get();
+        Long sourceId = ((LongWritable)message.get(i + 2)).get();
+     
         List<Pair<Long, Long>> idPairs = ids.get(targetId);
         if (idPairs == null) {
           idPairs = new LinkedList<Pair<Long, Long>>();

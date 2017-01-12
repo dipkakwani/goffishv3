@@ -2,3 +2,5 @@
 *~
 *.swp
 /docs/
+.classpath
+.settings

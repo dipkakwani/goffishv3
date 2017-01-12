@@ -51,6 +51,7 @@ import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.IVertex;
 import in.dream_lab.goffish.humus.api.IControlMessage;
 import in.dream_lab.goffish.humus.api.IReader;
+import in.dream_lab.goffish.utils.DisjointSets;
 import in.dream_lab.goffish.api.IMessage;
 
 

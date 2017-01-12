@@ -19,6 +19,7 @@ package in.dream_lab.goffish;
 
 import java.io.IOException;
 
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -39,11 +40,14 @@ import com.google.common.base.Preconditions;
 
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.humus.api.IReader;
+import in.dream_lab.goffish.utils.LongArrayListWritable;
 
 public class GraphJob extends BSPJob {
   
   public final static String VERTEX_CLASS_ATTR = "hama.subgraphcompute.class";
   public final static String SUBGRAPH_CLASS_ATTR = "hama.subgraph.class";
+  public final static String GRAPH_MESSAGE_CLASS_ATTR = "in.dream_lab.goffish.message.class";
+  
   
   public GraphJob(HamaConfiguration conf, Class<? extends SubgraphCompute> exampleClass)
       throws IOException {
@@ -54,6 +58,8 @@ public class GraphJob extends BSPJob {
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setPartitioner(HashPartitioner.class);
+    /*FIXME: Should go in setGraphMessageClass. Figure out why it is doesn't work there. */
+    conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, LongArrayListWritable.class, Writable.class);
   }
   
   
@@ -95,6 +101,11 @@ public class GraphJob extends BSPJob {
 
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
+  
+  public void setGraphMessageClass(Class<? extends Writable> cls) {
+    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, cls, Writable.class);
+    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, ArrayWritable.class, Writable.class);
   }
 
   @Override
