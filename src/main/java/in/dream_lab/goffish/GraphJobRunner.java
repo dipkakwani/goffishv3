@@ -89,11 +89,11 @@ import in.dream_lab.goffish.sample.*;
 public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, Message<K, M>> {
 
-  private static final long INITIALIZATION_SUPERSTEPS = 3;
+  private static final long INITIALIZATION_SUPERSTEPS = 4;
   
   /* Maintains statistics about graph job. Updated by master. */
   public static enum GraphJobCounter {
-    ACTIVE_SUBGRAPHS, VERTEX_COUNT, EDGE_COUNT
+    ACTIVE_SUBGRAPHS, VERTEX_COUNT, EDGE_COUNT , ITERATIONS
   }
   
   public static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
@@ -215,6 +215,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       subgraphs.add(subgraphComputeRunner);
     }
     
+    //Completed all initialization steps at this point
+    peer.sync();
+    
     while (!globalVoteToHalt) {     
       List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
       Message<K, M> msg;
@@ -251,6 +254,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
       }
       sendHeartBeat();
+      
+      peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
       
       peer.sync();
       
@@ -396,6 +401,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   
   long getSuperStepCount() {
     return peer.getSuperstepCount() - INITIALIZATION_SUPERSTEPS;
+    //return GraphJobCounter.ITERATIONS;
   }
   
   int getPartitionID(K subgraphID) {

@@ -54,7 +54,6 @@ class ControlMessage implements IControlMessage{
     WritableUtils.writeEnum(out, transmissionType);
     out.writeInt(extraInfo.size());
     for (BytesWritable info : extraInfo) {
-      //System.out.println("Writing"+Ints.fromByteArray(info.copyBytes()));
       info.write(out);
     }
     
@@ -75,7 +74,6 @@ class ControlMessage implements IControlMessage{
     while(extraInfoSize-- > 0) {
       BytesWritable info = new BytesWritable();
       info.readFields(in);
-      //System.out.println("Reading "+Ints.fromByteArray(info.getBytes()));
       extraInfo.add(info);
     }
     if (isPartitionMessage()) {
@@ -117,9 +115,6 @@ class ControlMessage implements IControlMessage{
   }
   
   public  Iterable<BytesWritable> getExtraInfo() {
-    //for (BytesWritable i : extraInfo) {
-      //System.out.println("Returning "+Ints.fromByteArray(i.getBytes()));
-    //}
     return extraInfo;
   }
   
