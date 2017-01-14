@@ -208,8 +208,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       //SubgraphCompute subgraphComputeRunner = new EdgeList.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new MetaGraph.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
-      //SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
-      SubgraphCompute subgraphComputeRunner = new TriangleCount();
+      // SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
+      
+      Class<? extends SubgraphCompute<S, V, E, M, I, J, K>> subgraphComputeClass = (Class<? extends SubgraphCompute<S, V, E, M, I, J, K>>) conf
+          .getClass(GraphJob.SUBGRAPH_COMPUTE_CLASS_ATTR, MetaGraph.class);
+      SubgraphCompute<S, V, E, M, I, J, K> subgraphComputeRunner = ReflectionUtils.newInstance(subgraphComputeClass);
+      //System.out.println(subgraphComputeClass);
+      //SubgraphCompute subgraphComputeRunner = new TriangleCount();
       subgraphComputeRunner.setSubgraph(subgraph);
       subgraphComputeRunner.init(this);
       subgraphs.add(subgraphComputeRunner);
@@ -221,10 +226,12 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     while (!globalVoteToHalt) {     
       List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
       Message<K, M> msg;
+      
+      //not receiving enough messages(almost 0)
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
-      //System.out.println(messages.size()+" Messages");
+      System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
@@ -270,7 +277,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //System.out.println("Clean up!");
     
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      System.out.println(subgraph.getSubgraph().getValue());
+      System.out.println("asdf"+subgraph.getSubgraph().getValue());
     }
   }
 
@@ -346,7 +353,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   int getMasterTaskIndex() {
     return 0;
   }
- 
+  
   /* Sends message to the peer, which can later be parsed to reach the destination
    * e.g. subgraph, vertex etc. Also updates the messageInFlight boolean. */
   void sendMessage(String peerName, Message<K, M> message) {
@@ -400,8 +407,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   }
   
   long getSuperStepCount() {
-    return peer.getSuperstepCount() - INITIALIZATION_SUPERSTEPS;
-    //return GraphJobCounter.ITERATIONS;
+    return peer.getCounter(GraphJobCounter.ITERATIONS).getCounter();
   }
   
   int getPartitionID(K subgraphID) {

@@ -41,7 +41,7 @@ public class VertexCount {
     public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
       if (getSuperStep() == 0) {
         long count = getSubgraph().localVertexCount();
-//        System.out.println("Number of local vertices = " + count);
+        //System.out.println("Number of local vertices = " + count);
 
 
         /*
@@ -95,7 +95,7 @@ public class VertexCount {
 	  pageJob.setMaxIteration(2);
 	  pageJob.setInputPath(new Path(args[0]));
 	  pageJob.setOutputPath(new Path(args[1]));
+	  pageJob.setGraphMessageClass(LongWritable.class);
 	  pageJob.waitForCompletion(true);
-	  pageJob.setGraphMessageClass(ArrayWritable.class);
   }
 }

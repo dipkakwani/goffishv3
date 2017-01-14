@@ -25,7 +25,8 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
-import org.apache.hadoop.util.ReflectionUtils;
+
+import org.apache.hama.util.ReflectionUtils;
 
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.humus.api.IControlMessage;
@@ -109,6 +110,7 @@ public class Message<K extends Writable, M extends Writable> implements IMessage
     hasSubgraphID = in.readBoolean();
     if (hasSubgraphID) {
       //TODO : Use reflection utils and instantiate
+      //this.subgraphID = ReflectionUtils.newInstance(K.class);
       this.subgraphID = (K)new LongWritable();
       subgraphID.readFields(in);
     }

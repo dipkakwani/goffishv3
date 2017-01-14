@@ -148,7 +148,8 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     peer.sync();
     Message<LongWritable, LongWritable> msg;
     while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
-      String msgString = msg.getControlInfo().toString();
+      ControlMessage ctrlMessage = (ControlMessage) msg.getControlInfo();
+      String msgString = ctrlMessage.getVertexValues();
       String msgStringArr[] = msgString.split(",");
       for (int i = 0; i < msgStringArr.length; i++) {
         String vertexInfo[] = msgStringArr[i].split(" ");

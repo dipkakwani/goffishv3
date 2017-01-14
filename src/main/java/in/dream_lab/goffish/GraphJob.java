@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -39,29 +40,36 @@ import org.apache.hama.bsp.message.queue.MessageQueue;
 import com.google.common.base.Preconditions;
 
 import in.dream_lab.goffish.api.ISubgraph;
+import in.dream_lab.goffish.api.ISubgraphCompute;
 import in.dream_lab.goffish.humus.api.IReader;
 import in.dream_lab.goffish.utils.LongArrayListWritable;
 
 public class GraphJob extends BSPJob {
   
-  public final static String VERTEX_CLASS_ATTR = "hama.subgraphcompute.class";
-  public final static String SUBGRAPH_CLASS_ATTR = "hama.subgraph.class";
+  public final static String SUBGRAPH_COMPUTE_CLASS_ATTR = "in.dream_lab.goffish.subgraphcompute.class";
+  public final static String SUBGRAPH_CLASS_ATTR = "in.dream_lab.goffish.subgraph.class";
   public final static String GRAPH_MESSAGE_CLASS_ATTR = "in.dream_lab.goffish.message.class";
-  
+  public final static String VERTEX_ID_CLASS_ATTR = "in.dream_lab.goffish.vertexid.class";
+  public final static String VERTEX_VALUE_CLASS_ATTR = "in.dream_lab.goffish.vertexvalue.class";
+  public final static String EDGE_ID_CLASS_ATTR = "in.dream_lab.goffish.edgeid.class";
+  public final static String EDGE_VALUE_CLASS_ATTR = "in.dream_lab.goffish.edgevalue.class";
+  public final static String SUBGRAPH_ID_CLASS_ATTR = "in.dream_lab.goffish.subgraphid.class";
+  public final static String SUBGRAPH_VALUE_CLASS_ATTR = "in.dream_lab.goffish.subgraphvalue.class";
   
   public GraphJob(HamaConfiguration conf, Class<? extends SubgraphCompute> exampleClass)
       throws IOException {
     super(conf); 
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);
     conf.setBoolean("hama.use.unsafeserialization", true);
-    conf.setClass(SUBGRAPH_CLASS_ATTR, Subgraph.class, ISubgraph.class);;
+    conf.setClass(SUBGRAPH_CLASS_ATTR, Subgraph.class, ISubgraph.class);
+    conf.setClass(SUBGRAPH_COMPUTE_CLASS_ATTR, exampleClass, SubgraphCompute.class);
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setPartitioner(HashPartitioner.class);
     /*FIXME: Should go in setGraphMessageClass. Figure out why it is doesn't work there. */
-    conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, LongArrayListWritable.class, Writable.class);
+    // Check if Fixed
+    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, LongWritable.class, Writable.class);
   }
-  
   
   
   @Override
@@ -70,6 +78,60 @@ public class GraphJob extends BSPJob {
     super.setPartitioner(theClass);
   }
   
+  
+  /**
+   * Set the Vertex ID class for the job.
+   */
+  public void setVertexIDClass(Class<? extends Writable> cls)
+      throws IllegalStateException {
+    conf.setClass(VERTEX_ID_CLASS_ATTR, cls, Writable.class);
+  }
+
+  /**
+   * Set the Vertex value class for the job.
+   */
+  public void setVertexValueClass(Class<? extends Writable> cls)
+      throws IllegalStateException {
+    conf.setClass(VERTEX_VALUE_CLASS_ATTR, cls, Writable.class);
+  }
+  
+  /**
+   * Set the Edge ID class for the job.
+   */
+  public void setEdgeIDClass(Class<? extends Writable> cls)
+      throws IllegalStateException {
+    conf.setClass(EDGE_ID_CLASS_ATTR, cls, Writable.class);
+  }
+
+  /**
+   * Set the Edge value class for the job.
+   */
+  public void setEdgeValueClass(Class<? extends Writable> cls)
+      throws IllegalStateException {
+    conf.setClass(EDGE_VALUE_CLASS_ATTR, cls, Writable.class);
+  }
+  
+  /**
+   * Set the Edge ID class for the job.
+   */
+  public void setSubgraphIDClass(Class<? extends Writable> cls)
+      throws IllegalStateException {
+    conf.setClass(SUBGRAPH_ID_CLASS_ATTR, cls, Writable.class);
+  }
+
+  /**
+   * Set the Edge value class for the job.
+   */
+  public void setSubgraphValueClass(Class<? extends Writable> cls)
+      throws IllegalStateException {
+    conf.setClass(SUBGRAPH_VALUE_CLASS_ATTR, cls, Writable.class);
+  }
+
+  public void setGraphMessageClass(Class<? extends Writable> cls) {
+    conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, cls, Writable.class);
+    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, ArrayWritable.class, Writable.class);
+  }
+
   /**
    * Use RicherSubgraph Class instead of Subgraph for more features
    */
@@ -82,10 +144,11 @@ public class GraphJob extends BSPJob {
   /**
    * Set the Subgraph class for the job.
    */
+  //is this needed? can use exampleclass in constructor to do this
   public void setSubgraphComputeClass(
       Class<? extends SubgraphCompute<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable>> cls)
       throws IllegalStateException {
-    conf.setClass(VERTEX_CLASS_ATTR, cls, Vertex.class);
+    conf.setClass(SUBGRAPH_COMPUTE_CLASS_ATTR, cls, ISubgraphCompute.class);
     setInputKeyClass(cls);
     setInputValueClass(NullWritable.class);
   }
@@ -99,15 +162,14 @@ public class GraphJob extends BSPJob {
         IReader.class);
   }
 
+  /**
+   * Sets the maximum number of supersteps for the application
+   * @param maxIteration
+   */
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
   }
   
-  public void setGraphMessageClass(Class<? extends Writable> cls) {
-    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, cls, Writable.class);
-    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, ArrayWritable.class, Writable.class);
-  }
-
   @Override
   public void submit() throws IOException, InterruptedException {
     super.submit();

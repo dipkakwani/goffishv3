@@ -97,16 +97,13 @@ class ControlMessage implements IControlMessage{
     this.setPartitionID(partitionID);
   }
   
+  //remove this and just use extrainfo
   public void setVertexValues(String vertex) {
     this.vertexValues = new Text(vertex);
   }
   
-  //to be removed when list implementation of addextrainfo is completed
-  @Deprecated
-  public void setextraInfo(byte b[]) {
-//    this.extraInfo = b;
-    BytesWritable info = new BytesWritable(b);
-    this.extraInfo.add(info);
+  public String getVertexValues() {
+    return vertexValues.toString();
   }
   
   public void addextraInfo(byte b[]) {
@@ -133,6 +130,7 @@ class ControlMessage implements IControlMessage{
     return transmissionType == IControlMessage.TransmissionType.BROADCAST;
   }
 
+  //to be removed after clearing dependencies from LongTextjsonReader
   @Override
   public String toString() {
     if(isPartitionMessage()) {
