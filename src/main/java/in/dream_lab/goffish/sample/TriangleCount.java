@@ -1,6 +1,5 @@
 package in.dream_lab.goffish.sample;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -9,13 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.TextInputFormat;
-import org.apache.hama.bsp.TextOutputFormat;
 
-import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.SubgraphCompute;
 import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IMessage;
@@ -214,23 +208,6 @@ public class TriangleCount extends
         idPairs.add(new Pair<Long, Long>(messageId, sourceId));
       }
     }
-  }
-  
-  public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
-    HamaConfiguration conf = new HamaConfiguration();
-    GraphJob pageJob = new GraphJob(conf, TriangleCount.class);
-    pageJob.setJobName("Triangle Count");
-    pageJob.setInputFormat(TextInputFormat.class);
-    pageJob.setInputKeyClass(LongWritable.class);
-    pageJob.setInputValueClass(LongWritable.class);
-    pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setOutputKeyClass(LongWritable.class);
-    pageJob.setOutputValueClass(LongWritable.class);
-    pageJob.setMaxIteration(2);
-    pageJob.setInputPath(new Path(args[0]));
-    pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(LongArrayListWritable.class);
-    pageJob.waitForCompletion(true);
   }
   
 }

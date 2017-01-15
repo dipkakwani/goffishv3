@@ -17,54 +17,28 @@
  */
 package in.dream_lab.goffish.sample;
 
-import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.commons.cli.ParseException;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hama.HamaConfiguration;
-import org.apache.hama.bsp.TextInputFormat;
-import org.apache.hama.bsp.TextOutputFormat;
 
-import in.dream_lab.goffish.GraphJob;
 import in.dream_lab.goffish.SubgraphCompute;
-import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.api.IRemoteVertex;
-import in.dream_lab.goffish.api.IVertex;
 
-public class MetaGraph {
-  public static class VrtxCnt extends
-      SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
+public class MetaGraph extends
+    SubgraphCompute<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> {
 
-    @Override
-    public void compute(Collection<IMessage<LongWritable,LongWritable>> messages) {
-      if (getSuperStep() == 0) {
-        long sid = getSubgraph().getSubgraphID().get();
-        for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph().getRemoteVertices()) {
-          System.out.println(sid + " " +vertex.getSubgraphID());
-        }
-        voteToHalt();
+  @Override
+  public void compute(
+      Collection<IMessage<LongWritable, LongWritable>> messages) {
+    if (getSuperStep() == 0) {
+      long sid = getSubgraph().getSubgraphID().get();
+      for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()
+          .getRemoteVertices()) {
+        System.out.println(sid + " " + vertex.getSubgraphID());
       }
-    
+      voteToHalt();
     }
-  }
-  
-  public static void main(String args[]) throws IOException,InterruptedException, ClassNotFoundException, ParseException
-  {
-          HamaConfiguration conf = new HamaConfiguration();
-          GraphJob pageJob = new GraphJob(conf, VrtxCnt.class);
-          pageJob.setJobName("Vertex Count");
-          pageJob.setInputFormat(TextInputFormat.class);
-          pageJob.setInputKeyClass(LongWritable.class);
-          pageJob.setInputValueClass(LongWritable.class);
-          pageJob.setOutputFormat(TextOutputFormat.class);
-          pageJob.setOutputKeyClass(LongWritable.class);
-          pageJob.setOutputValueClass(LongWritable.class);
-          pageJob.setMaxIteration(2);
-          pageJob.setInputPath(new Path(args[0]));
-          pageJob.setOutputPath(new Path(args[1]));
-          pageJob.waitForCompletion(true);
+
   }
 }

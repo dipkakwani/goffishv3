@@ -85,11 +85,10 @@ import in.dream_lab.goffish.sample.*;
  * @param <E> the value type of an edge.
  * @param <M> the value type of a vertex.
  */
-//@SuppressWarnings("rawtypes")
+
 public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
     extends BSP<Writable, Writable, Writable, Writable, Message<K, M>> {
 
-  private static final long INITIALIZATION_SUPERSTEPS = 4;
   
   /* Maintains statistics about graph job. Updated by master. */
   public static enum GraphJobCounter {
@@ -204,17 +203,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
      */
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       
-      /* FIXED: Read generic types from configuration and make subgraph object generic. */
-      //SubgraphCompute subgraphComputeRunner = new EdgeList.VrtxCnt();
-      //SubgraphCompute subgraphComputeRunner = new MetaGraph.VrtxCnt();
-      //SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
-      // SubgraphCompute subgraphComputeRunner = new ConnectedComponents.CC();
-      
       Class<? extends SubgraphCompute<S, V, E, M, I, J, K>> subgraphComputeClass = (Class<? extends SubgraphCompute<S, V, E, M, I, J, K>>) conf
           .getClass(GraphJob.SUBGRAPH_COMPUTE_CLASS_ATTR, MetaGraph.class);
-      SubgraphCompute<S, V, E, M, I, J, K> subgraphComputeRunner = ReflectionUtils.newInstance(subgraphComputeClass);
-      //System.out.println(subgraphComputeClass);
-      //SubgraphCompute subgraphComputeRunner = new TriangleCount();
+      SubgraphCompute<S, V, E, M, I, J, K> subgraphComputeRunner = ReflectionUtils
+          .newInstance(subgraphComputeClass);
       subgraphComputeRunner.setSubgraph(subgraph);
       subgraphComputeRunner.init(this);
       subgraphs.add(subgraphComputeRunner);
@@ -227,7 +219,6 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
       Message<K, M> msg;
       
-      //not receiving enough messages(almost 0)
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }

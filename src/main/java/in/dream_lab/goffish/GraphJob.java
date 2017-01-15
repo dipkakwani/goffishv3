@@ -66,12 +66,8 @@ public class GraphJob extends BSPJob {
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
     this.setPartitioner(HashPartitioner.class);
-    /*FIXME: Should go in setGraphMessageClass. Figure out why it is doesn't work there. */
-    // Check if Fixed
-    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, LongWritable.class, Writable.class);
   }
-  
-  
+
   @Override
   public void setPartitioner(
       @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
