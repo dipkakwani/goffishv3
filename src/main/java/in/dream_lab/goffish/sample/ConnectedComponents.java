@@ -95,6 +95,7 @@ public class ConnectedComponents {
 	  pageJob.setMaxIteration(2);
 	  pageJob.setInputPath(new Path(args[0]));
 	  pageJob.setOutputPath(new Path(args[1]));
+	  pageJob.setGraphMessageClass(LongWritable.class);
 	  pageJob.waitForCompletion(true);
   }
 }

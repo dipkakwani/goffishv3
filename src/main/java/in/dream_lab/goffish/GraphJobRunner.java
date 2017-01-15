@@ -204,7 +204,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
      */
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
       
-      /* FIXME: Read generic types from configuration and make subgraph object generic. */
+      /* FIXED: Read generic types from configuration and make subgraph object generic. */
       //SubgraphCompute subgraphComputeRunner = new EdgeList.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new MetaGraph.VrtxCnt();
       //SubgraphCompute subgraphComputeRunner = new VertexCount.VrtxCnt();
@@ -231,7 +231,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       while ((msg = peer.getCurrentMessage()) != null) {
         messages.add(msg);
       }
-      System.out.println(messages.size()+" Messages");
+      //System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
@@ -277,7 +277,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     //System.out.println("Clean up!");
     
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      System.out.println("asdf"+subgraph.getSubgraph().getValue());
+      System.out.println(subgraph.getSubgraph().getValue());
     }
   }
 
