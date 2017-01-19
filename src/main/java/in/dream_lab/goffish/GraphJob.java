@@ -56,6 +56,8 @@ public class GraphJob extends BSPJob {
   public final static String SUBGRAPH_ID_CLASS_ATTR = "in.dream_lab.goffish.subgraphid.class";
   public final static String SUBGRAPH_VALUE_CLASS_ATTR = "in.dream_lab.goffish.subgraphvalue.class";
   
+  public final static String INITIAL_VALUE = "in.dream_lab.goffish.initialvalue";
+  
   public GraphJob(HamaConfiguration conf, Class<? extends SubgraphCompute> exampleClass)
       throws IOException {
     super(conf); 
@@ -164,6 +166,16 @@ public class GraphJob extends BSPJob {
    */
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
+  }
+  
+  /**
+   * Sets the initial value that is passed to the constructor of the application
+   * at runtime
+   * 
+   * @param input
+   */
+  public void setInitialInput(String input) {
+    conf.set(INITIAL_VALUE, input);
   }
   
   @Override

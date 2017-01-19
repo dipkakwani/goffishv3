@@ -22,19 +22,21 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.sample.GraphStats;
 
-
-public class VertexCountJob {
+public class GraphStatsJob {
   
   public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
+
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob pageJob = new GraphJob(conf, VertexCount.class);
-    pageJob.setJobName("Vertex Count");
+    GraphJob pageJob = new GraphJob(conf, GraphStats.class);
+    pageJob.setJobName("Graph Stats");
     pageJob.setInputFormat(TextInputFormat.class);
     pageJob.setInputKeyClass(LongWritable.class);
     pageJob.setInputValueClass(LongWritable.class);
@@ -43,9 +45,10 @@ public class VertexCountJob {
     pageJob.setOutputValueClass(LongWritable.class);
     pageJob.setInputPath(new Path(args[0]));
     pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(LongWritable.class);
-    
-    //blocks till job completed
+    pageJob.setGraphMessageClass(Text.class);
+
+    // blocks till job completed
     pageJob.waitForCompletion(true);
   }
+
 }

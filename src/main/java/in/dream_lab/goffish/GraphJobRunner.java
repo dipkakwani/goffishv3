@@ -120,13 +120,13 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     /*TODO: Read input reader class type from Hama conf. 
      * FIXME:Make type of Message generic in Reader. */
 
-    Class<?> readerClass = conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, LongTextAdjacencyListReader.class, IReader.class);
+    Class<? extends IReader> readerClass = conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, LongTextAdjacencyListReader.class, IReader.class);
     List<Object> params = new ArrayList<Object>();
     params.add(peer);
     params.add(subgraphPartitionMap);
     
     IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
-        //ReflectionUtils.newInstance(readerClass, params);
+        //ReflectionUtils.newInstance(readerClass, params.toArray());
         (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
         //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextJSONReader<>(peer, subgraphPartitionMap);
     
@@ -160,6 +160,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
         System.out.println();
       }
+      System.out.println("SG_END");
     }*/
     //System.out.println(subgraphs);
     
@@ -198,10 +199,24 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     executor.setMaximumPoolSize(64);
     */
     
+    //if the application needs any input in the 0th superstep
+    String initialValue = conf.get(GraphJob.INITIAL_VALUE);
     /*
      * Creating SubgraphCompute objects
      */
     for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
+      
+      if (initialValue != null) {
+        Class<? extends SubgraphCompute<S, V, E, M, I, J, K>> subgraphComputeClass = (Class<? extends SubgraphCompute<S, V, E, M, I, J, K>>) conf
+            .getClass(GraphJob.SUBGRAPH_COMPUTE_CLASS_ATTR, SingleSourceShortestPath.class);
+        Object []params ={initialValue};
+        SubgraphCompute<S, V, E, M, I, J, K> subgraphComputeRunner = ReflectionUtils
+            .newInstance(subgraphComputeClass, params);
+        subgraphComputeRunner.setSubgraph(subgraph);
+        subgraphComputeRunner.init(this);
+        subgraphs.add(subgraphComputeRunner);
+        continue;
+      }
       
       Class<? extends SubgraphCompute<S, V, E, M, I, J, K>> subgraphComputeClass = (Class<? extends SubgraphCompute<S, V, E, M, I, J, K>>) conf
           .getClass(GraphJob.SUBGRAPH_COMPUTE_CLASS_ATTR, MetaGraph.class);
@@ -216,6 +231,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     peer.sync();
     
     while (!globalVoteToHalt) {     
+      
+      LOG.info("Application SuperStep "+getSuperStepCount());
+      
       List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
       Message<K, M> msg;
       
@@ -243,7 +261,11 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
         if (messagesToSubgraph != null) {
           hasMessages = true;
+        } else {
+          // if null is passed to compute it might give null pointer exception
+          messagesToSubgraph = new ArrayList<>();
         }
+        
         if (!subgraph.hasVotedToHalt() || hasMessages) {
           subgraph.setActive();
           subgraph.compute(messagesToSubgraph);
@@ -258,6 +280,12 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       peer.sync();
       
     }
+    
+    /* Uncomment for SSSP output
+    for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
+      ((SingleSourceShortestPath)subgraph).wrapup();
+    }
+    */
 
   }
 
