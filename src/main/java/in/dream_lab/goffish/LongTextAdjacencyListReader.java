@@ -23,19 +23,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hama.bsp.BSP;
 import org.apache.hama.bsp.BSPPeer;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.sync.SyncException;
@@ -61,6 +59,8 @@ import in.dream_lab.goffish.api.IMessage;
 public class LongTextAdjacencyListReader<S extends Writable, V extends Writable, E extends Writable, K extends Writable, M extends Writable> 
  implements IReader <Writable, Writable, Writable, Writable, S, V, E, LongWritable, LongWritable, LongWritable> {
   
+  public static final Log LOG = LogFactory.getLog(LongTextAdjacencyListReader.class);
+  
   //TODO : Change to long
   Map<LongWritable, IVertex<V, E, LongWritable, LongWritable>> vertexMap;
   BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
@@ -81,94 +81,105 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
   @Override
   public  List<ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs()
       throws IOException, SyncException, InterruptedException {
-    Map<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> partitionMap = new HashMap<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>>();
+    
+    Map<Integer, List<String>> partitionMap = new HashMap<Integer, List<String>>();
     vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
+    // List of edges.Used to create RemoteVertices
+    List<IEdge<E, LongWritable, LongWritable>> _edges = new ArrayList<IEdge<E, LongWritable, LongWritable>>();
+
     long edgeCount = 0;
+    LOG.info("SETUP Starting " + peer.getPeerIndex() + " Memory: " + Runtime.getRuntime().freeMemory());
     
     KeyValuePair<Writable, Writable> pair;
     while ((pair = peer.readNext()) != null) {
       //NOTE: Confirm that data starts from value and not from key.
-      String value[] = pair.getValue().toString().split("\\s+");
-      LongWritable sourceID = new LongWritable(Long.parseLong(value[0]));
-      IntWritable partitionID = new IntWritable(Integer.parseInt(value[1]));
-      List<Vertex<V, E, LongWritable, LongWritable>> partitionVertices = partitionMap.get(partitionID);
-      if (partitionVertices == null) {
-        partitionVertices = new ArrayList<Vertex<V, E, LongWritable, LongWritable>>();
-        partitionMap.put(partitionID, partitionVertices);
-      }
-      Vertex<V, E, LongWritable, LongWritable> source = (Vertex<V, E, LongWritable, LongWritable>)vertexMap.get(sourceID);
-      if (source == null) {
-        source = new Vertex<V, E, LongWritable, LongWritable>(sourceID);
-        vertexMap.put(sourceID, source);
-      }
-      partitionVertices.add(source);
-      for (int i = 2; i < value.length; i++) {
-        LongWritable sinkID = new LongWritable(Long.parseLong(value[i]));
-        Vertex<V, E, LongWritable, LongWritable> sink = (Vertex<V, E, LongWritable, LongWritable>)vertexMap.get(sinkID);   
-        if (sink == null) {
-          sink = new Vertex<V, E, LongWritable, LongWritable>(sinkID);
-          vertexMap.put(sinkID, sink);
-        }
-        LongWritable edgeID = new LongWritable(edgeCount++ | (((long) peer.getPeerIndex()) << 32));
-        Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(edgeID, sinkID);
-        source.addEdge(e);
-      }
-    }
-   
-    vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
+      String stringInput = pair.getValue().toString();
+      String vertexValue[] = stringInput.split("\\s+");
+      //LongWritable sourceID = new LongWritable(Long.parseLong(value[0]));
+      int partitionID = Integer.parseInt(vertexValue[1]);
 
-    List<IEdge<E, LongWritable, LongWritable>> _edges = new ArrayList<IEdge<E, LongWritable, LongWritable>>();
-    // Send vertices to their respective partitions.
-    for (Map.Entry<IntWritable, List<Vertex<V, E, LongWritable, LongWritable>>> entry : partitionMap.entrySet()) {  
-      if (entry.getKey().get() != peer.getPeerIndex()) {
-        StringBuilder sb = new StringBuilder();
-        for (Vertex<V, E, LongWritable, LongWritable> v : entry.getValue()) {
-          sb.append(v.getVertexID());
-          for (IEdge<E, LongWritable, LongWritable> e : v.outEdges()) {
-            Edge<E, LongWritable, LongWritable> edge = (Edge<E, LongWritable, LongWritable>)e;
-            sb.append(' ').append(edge.getSinkVertexID()).append(' ').append(edge.getEdgeID());
-          }
-          sb.append(',');
+      // Vertex does not belong to this partition
+      if (partitionID != peer.getPeerIndex()) {
+        List<String> partitionVertices = partitionMap.get(partitionID);
+        if (partitionVertices == null) {
+          partitionVertices = new ArrayList<String>();
+          partitionMap.put(partitionID, partitionVertices);
         }
-        Message<LongWritable, LongWritable> msg = new Message<LongWritable, LongWritable>();
-        ControlMessage controlInfo = new ControlMessage();
-        controlInfo.setTransmissionType(IControlMessage.TransmissionType.VERTEX);
-        controlInfo.setVertexValues(sb.toString());
-        msg.setControlInfo(controlInfo);
-        peer.send(peer.getPeerName(entry.getKey().get()), (Message<K, M>)msg);
-      } else { // Belongs to this partition
-        for (Vertex<V, E, LongWritable, LongWritable> v : entry.getValue()) {
-          vertexMap.put(v.getVertexID(), v);
-          _edges.addAll(v.outEdges());
-        }
-      }
-    }
+        partitionVertices.add(stringInput);
+      } else {
+        LongWritable vertexID = new LongWritable(Long.parseLong(vertexValue[0]));
+        Vertex<V, E, LongWritable, LongWritable> vertex;
+        vertex = new Vertex<V, E, LongWritable, LongWritable>(vertexID);
+        vertexMap.put(vertex.getVertexID(), vertex);
 
-    // End of first superstep.
-    peer.sync();
-    Message<LongWritable, LongWritable> msg;
-    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
-      ControlMessage ctrlMessage = (ControlMessage) msg.getControlInfo();
-      String msgString = ctrlMessage.getVertexValues();
-      String msgStringArr[] = msgString.split(",");
-      for (int i = 0; i < msgStringArr.length; i++) {
-        String vertexInfo[] = msgStringArr[i].split(" ");
-        LongWritable vertexID = new LongWritable(Long.parseLong(vertexInfo[0]));
-        Vertex<V, E, LongWritable, LongWritable> source = (Vertex<V, E, LongWritable, LongWritable>)vertexMap.get(vertexID);
-        if (source == null) {
-          source = new Vertex<V, E, LongWritable, LongWritable>(vertexID);
-          vertexMap.put(source.getVertexID(), source);
-        }
-        for (int j = 1; j < vertexInfo.length; j+=2) {
-          LongWritable sinkID = new LongWritable(Long.parseLong(vertexInfo[j]));
-          LongWritable edgeID = new LongWritable(Long.parseLong(vertexInfo[j + 1]));
-          Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(edgeID, sinkID);
-          source.addEdge(e);
+        for (int j = 2; j < vertexValue.length; j++) {
+          LongWritable sinkID = new LongWritable(Long.parseLong(vertexValue[j]));
+          LongWritable edgeID = new LongWritable(
+              edgeCount++ | (((long) peer.getPeerIndex()) << 32));
+          Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(
+              edgeID, sinkID);
+          vertex.addEdge(e);
           _edges.add(e);
         }
+        
+        vertexMap.put(vertex.getVertexID(), vertex);
+        _edges.addAll(vertex.outEdges());
       }
     }
 
+    // Send vertices to their respective partitions
+    for (Map.Entry<Integer, List<String>> entry : partitionMap.entrySet()) {
+      int partitionID = entry.getKey().intValue();
+      List<String> vertices = entry.getValue();
+      System.out.println("To "+partitionID+" "+vertices.size());
+      for (String vertex : vertices) {
+        Message<LongWritable, LongWritable> vertexMsg = new Message<LongWritable, LongWritable>();
+        ControlMessage controlInfo = new ControlMessage();
+        controlInfo
+            .setTransmissionType(IControlMessage.TransmissionType.VERTEX);
+        controlInfo.setVertexValues(vertex);
+        vertexMsg.setControlInfo(controlInfo);
+        peer.send(peer.getPeerName(partitionID), (Message<K, M>) vertexMsg);
+      }
+    }
+    
+
+    // End of first superstep.
+    System.gc();
+    
+    peer.sync();
+    
+    LOG.info("Second Superstep in Reader " + peer.getPeerIndex() + " Memory: " + Runtime.getRuntime().freeMemory());
+    
+    Message<LongWritable, LongWritable> msg;
+    while ((msg = (Message<LongWritable, LongWritable>) peer.getCurrentMessage()) != null) {
+      ControlMessage ctrlMessage = (ControlMessage) msg.getControlInfo();
+      String msgString = ctrlMessage.getVertexValues();
+      // String msgStringArr[] = msgString.split(",");
+      // for (int i = 0; i < msgStringArr.length; i++) {
+      String vertexInfo[] = msgString.split("\\s+");
+      
+      LongWritable vertexID = new LongWritable(Long.parseLong(vertexInfo[0]));
+      Vertex<V, E, LongWritable, LongWritable> source = (Vertex<V, E, LongWritable, LongWritable>) vertexMap
+          .get(vertexID);
+      if (source == null) {
+        source = new Vertex<V, E, LongWritable, LongWritable>(vertexID);
+        vertexMap.put(source.getVertexID(), source);
+      }
+      for (int j = 2; j < vertexInfo.length; j++) {
+        LongWritable sinkID = new LongWritable(Long.parseLong(vertexInfo[j]));
+        LongWritable edgeID = new LongWritable(
+            edgeCount++ | (((long) peer.getPeerIndex()) << 32));
+        Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(
+            edgeID, sinkID);
+        source.addEdge(e);
+        _edges.add(e);
+      }
+    }
+    //}
+    
+    LOG.info("Creating Remote Vertex Objects");
+    
     /* Create remote vertex objects. */
     for (IEdge<E, LongWritable, LongWritable> e : _edges) {
       LongWritable sinkID = e.getSinkVertexID();
@@ -181,8 +192,11 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     
     Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition = new Partition<S, V, E, LongWritable, LongWritable, LongWritable>(peer.getPeerIndex());
     
+    LOG.info("Calling formSubgraph()");
+    
     formSubgraphs(partition, vertexMap.values());
     
+    LOG.info("Done with formSubgraph()");
     /*
      * Ask Remote vertices to send their subgraph IDs. Requires 2 supersteps
      * because the graph is directed
@@ -288,6 +302,15 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     return partition.getSubgraphs();
   }
   
+  private Vertex<V, E, LongWritable, LongWritable> createVertex(
+      String stringInput) {
+    // TODO Auto-generated method stub
+
+    
+    return null;
+  }
+
+
   /* takes partition and message list as argument and sends the messages to their respective partition.
    * Needed to send messages just before peer.sync(),as a hama bug causes the program to stall while trying
    * to send and recieve(iterate over recieved message) large messages at the same time
