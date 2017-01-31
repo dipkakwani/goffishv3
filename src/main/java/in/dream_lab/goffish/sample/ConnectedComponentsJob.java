@@ -28,6 +28,7 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.humus.api.NonSplitTextInputFormat;
 
 public class ConnectedComponentsJob {
 
@@ -36,7 +37,8 @@ public class ConnectedComponentsJob {
     HamaConfiguration conf = new HamaConfiguration();
     GraphJob pageJob = new GraphJob(conf, ConnectedComponents.class);
     pageJob.setJobName("Connected Components");
-    pageJob.setInputFormat(TextInputFormat.class);
+    pageJob.setInputFormat(NonSplitTextInputFormat.class);
+    //pageJob.setInputFormat(TextInputFormat.class);
     pageJob.setInputKeyClass(LongWritable.class);
     pageJob.setInputValueClass(LongWritable.class);
     pageJob.setOutputFormat(TextOutputFormat.class);

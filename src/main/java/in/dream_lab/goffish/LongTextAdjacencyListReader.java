@@ -110,7 +110,6 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         LongWritable vertexID = new LongWritable(Long.parseLong(vertexValue[0]));
         Vertex<V, E, LongWritable, LongWritable> vertex;
         vertex = new Vertex<V, E, LongWritable, LongWritable>(vertexID);
-        vertexMap.put(vertex.getVertexID(), vertex);
 
         for (int j = 2; j < vertexValue.length; j++) {
           LongWritable sinkID = new LongWritable(Long.parseLong(vertexValue[j]));

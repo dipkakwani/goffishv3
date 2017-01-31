@@ -27,6 +27,7 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.humus.api.NonSplitTextInputFormat;
 
 
 public class VertexCountJob {
@@ -35,7 +36,8 @@ public class VertexCountJob {
     HamaConfiguration conf = new HamaConfiguration();
     GraphJob pageJob = new GraphJob(conf, VertexCount.class);
     pageJob.setJobName("Vertex Count");
-    pageJob.setInputFormat(TextInputFormat.class);
+    pageJob.setInputFormat(NonSplitTextInputFormat.class);
+    //pageJob.setInputFormat(TextInputFormat.class);
     pageJob.setInputKeyClass(LongWritable.class);
     pageJob.setInputValueClass(LongWritable.class);
     pageJob.setOutputFormat(TextOutputFormat.class);
