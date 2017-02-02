@@ -87,8 +87,6 @@ public class LongMapJSONReader<S extends Writable, V extends Writable, E extends
   public List<ISubgraph<S, V, E, LongWritable, LongWritable, LongWritable>> getSubgraphs()
       throws IOException, SyncException, InterruptedException {
 	  LOG.info("Creating vertices");
-    // Map of partitionID,vertex that do not belong to this partition
-    Map<Integer, List<String>> partitionMap = new HashMap<Integer, List<String>>();
 
     vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>();
 
@@ -98,52 +96,13 @@ public class LongMapJSONReader<S extends Writable, V extends Writable, E extends
     KeyValuePair<Writable, Writable> pair;
     while ((pair = peer.readNext()) != null) {
       String StringJSONInput = pair.getValue().toString();
-      JSONArray JSONInput = (JSONArray) JSONValue.parse(StringJSONInput);
-
-      int partitionID = Integer.parseInt(JSONInput.get(1).toString());
-
-      // Vertex does not belong to this partition
-      if (partitionID != peer.getPeerIndex()) {
-        List<String> partitionVertices = partitionMap.get(partitionID);
-        if (partitionVertices == null) {
-          partitionVertices = new ArrayList<String>();
-          partitionMap.put(partitionID, partitionVertices);
-        }
-        partitionVertices.add(StringJSONInput);
-      } else {
         Vertex<V, E, LongWritable, LongWritable> vertex = createVertex(
             StringJSONInput);
         vertexMap.put(vertex.getVertexID(), vertex);
         _edges.addAll(vertex.outEdges());
       }
-    }
- LOG.info("Sending Vertices to respective partitions");
     
-    // Send vertices to their respective partitions
-    for (Map.Entry<Integer, List<String>> entry : partitionMap.entrySet()) {
-      int partitionID = entry.getKey().intValue();
-      List<String> vertices = entry.getValue();
-      for (String vertex : vertices) {
-        Message<LongWritable, LongWritable> vertexMsg = new Message<LongWritable, LongWritable>();
-        ControlMessage controlInfo = new ControlMessage();
-        controlInfo
-            .setTransmissionType(IControlMessage.TransmissionType.VERTEX);
-        controlInfo.setVertexValues(vertex);
-        vertexMsg.setControlInfo(controlInfo);
-        peer.send(peer.getPeerName(partitionID), (Message<K, M>) vertexMsg);
-      }
-    }
-    
-    //End of first SuperStep
-    peer.sync();
-   
-    Message<LongWritable, LongWritable> msg;
-    while ((msg = (Message<LongWritable, LongWritable>)peer.getCurrentMessage()) != null) {
-      String JSONVertex = msg.getControlInfo().toString();
-      Vertex<V, E, LongWritable, LongWritable> vertex = createVertex(JSONVertex);
-      vertexMap.put(vertex.getVertexID(), vertex);
-      _edges.addAll(vertex.outEdges());
-    }
+    LOG.info("Sending Vertices to respective partitions");
     
     LOG.info("Received all vertices");
     /* Create remote vertex objects. */
@@ -185,7 +144,7 @@ public class LongMapJSONReader<S extends Writable, V extends Writable, E extends
 
     peer.sync();
     
-    Map<Integer, List<Message<LongWritable, LongWritable>>> replyMessages = new HashMap<Integer, List<Message<LongWritable, LongWritable>>>();
+    Message<LongWritable, LongWritable> msg;
     //Receiving 1 message per partition
     while ((msg = (Message<LongWritable, LongWritable>) peer.getCurrentMessage()) != null) {
       /*
@@ -298,7 +257,7 @@ public class LongMapJSONReader<S extends Writable, V extends Writable, E extends
     //fix this
   //assumed value of jsonMap= "key1:type1:value1$ key2:type2:value2$....."
     //type could be Long or String or Double
-    String jsonMap=JSONInput.get(2).toString();
+    String jsonMap=JSONInput.get(1).toString();
     String[] vprop=jsonMap.split(Pattern.quote("$"));
     //key,value property pairs for a vertex
     MapWritable vertexMap=new MapWritable();
@@ -314,7 +273,7 @@ public class LongMapJSONReader<S extends Writable, V extends Writable, E extends
     
     vertex.setValue(vertexValue);
 
-    JSONArray edgeList = (JSONArray) JSONInput.get(3);
+    JSONArray edgeList = (JSONArray) JSONInput.get(2);
     for (Object edgeInfo : edgeList) {
       Object edgeValues[] = ((JSONArray) edgeInfo).toArray();
       LongWritable sinkID = new LongWritable(
@@ -346,7 +305,6 @@ public class LongMapJSONReader<S extends Writable, V extends Writable, E extends
   void formSubgraphs(Partition<S, V, E, LongWritable, LongWritable, LongWritable> partition, Collection<IVertex<V, E, LongWritable, LongWritable>> vertices) throws IOException {
     
     long subgraphCount = 0;
-    Set<LongWritable> visited = new HashSet<LongWritable>();
     Message<LongWritable, LongWritable> subgraphLocationBroadcast = new Message<LongWritable, LongWritable>();
     
     subgraphLocationBroadcast.setMessageType(IMessage.MessageType.SUBGRAPH);
