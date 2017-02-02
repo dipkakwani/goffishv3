@@ -36,6 +36,8 @@ import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.OutgoingMessageManager;
 import org.apache.hama.bsp.message.queue.MessageQueue;
+import org.apache.hama.bsp.taskallocation.RoundRobinTaskAllocator;
+import org.apache.hama.bsp.taskallocation.TaskAllocationStrategy;
 
 import com.google.common.base.Preconditions;
 
@@ -67,7 +69,8 @@ public class GraphJob extends BSPJob {
     conf.setClass(SUBGRAPH_COMPUTE_CLASS_ATTR, exampleClass, SubgraphCompute.class);
     this.setBspClass(GraphJobRunner.class);
     this.setJarByClass(exampleClass);
-    this.setPartitioner(HashPartitioner.class);
+    //this.setPartitioner(HashPartitioner.class);
+    conf.setClass(Constants.TASK_ALLOCATOR_CLASS, RoundRobinTaskAllocator.class, TaskAllocationStrategy.class);
   }
 
   @Override
