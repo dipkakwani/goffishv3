@@ -47,6 +47,8 @@ public class VertexCountJob {
     pageJob.setOutputPath(new Path(args[1]));
     pageJob.setGraphMessageClass(LongWritable.class);
     
+    
+    System.out.println("Free Memory before running = "+Runtime.getRuntime().freeMemory());
     //blocks till job completed
     pageJob.waitForCompletion(true);
   }

@@ -31,6 +31,10 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   private I vertexID;
   private V _value;
   
+  Vertex() {
+    _adjList = new ArrayList<IEdge<E, I, J>>();
+  }
+  
   Vertex(I ID) {
     vertexID = ID;
     _adjList = new ArrayList<IEdge<E, I, J>>();
@@ -38,6 +42,10 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   
   void addEdge(IEdge<E, I, J> edge) {
     _adjList.add(edge);
+  }
+  
+  void setVertexID(I vertexID) {
+    this.vertexID = vertexID;
   }
   
   @Override
