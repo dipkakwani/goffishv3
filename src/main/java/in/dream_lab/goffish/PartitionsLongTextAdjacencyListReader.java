@@ -93,6 +93,9 @@ public class PartitionsLongTextAdjacencyListReader<S extends Writable, V extends
 
     LOG.info("Free Memory in Reader: " + runtime.freeMemory() / mb + " Total Memory: " + runtime.totalMemory() / mb);
     
+    LOG.info("Free Memory after Reaching reader " + Runtime.getRuntime().freeMemory());
+    System.out.println(Runtime.getRuntime().freeMemory());
+    
     KeyValuePair<Writable, Writable> pair;
     pair = peer.readNext();
     String metaInfo[] = pair.getValue().toString().trim().split(" ");
@@ -101,7 +104,6 @@ public class PartitionsLongTextAdjacencyListReader<S extends Writable, V extends
     long totalPartitionVertices = Long.parseLong(metaInfo[2]);
     
 
-    
     //Map<Integer, List<String>> partitionMap = new HashMap<Integer, List<String>>();
     vertexMap = new HashMap<LongWritable, IVertex<V, E, LongWritable, LongWritable>>((int)totalPartitionVertices);
     
@@ -120,6 +122,9 @@ public class PartitionsLongTextAdjacencyListReader<S extends Writable, V extends
     // List of edges.Used to create RemoteVertices
     //List<IEdge<E, LongWritable, LongWritable>> _edges = new ArrayList<IEdge<E, LongWritable, LongWritable>>((int)partitionEdgeCount);
     List<IEdge<E, LongWritable, LongWritable>> _edges = new LinkedList<IEdge<E, LongWritable, LongWritable>>();
+    
+    // List of edges.Used to create RemoteVertices
+    //List<IEdge<E, LongWritable, LongWritable>> _edges = new ArrayList<IEdge<E, LongWritable, LongWritable>>((int)partitionEdgeCount);
     long edgeCount = 0;
     //initializing _edges to prevent extra cpu utilization while reading
     for (long i = 0; i < partitionEdgeCount; i++) {
@@ -134,6 +139,8 @@ public class PartitionsLongTextAdjacencyListReader<S extends Writable, V extends
     Iterator<IEdge<E, LongWritable, LongWritable>> edgeIterator = _edges.iterator();
 
     LOG.info("SETUP Starting Free Memory: " + runtime.freeMemory() / mb + " Total Memory: " + runtime.totalMemory() / mb);
+    LOG.info("SETUP Starting " + peer.getPeerIndex() + " Memory: "
+        + Runtime.getRuntime().freeMemory());
 
     while ((pair = peer.readNext()) != null) {
       // NOTE: Confirm that data starts from value and not from key.

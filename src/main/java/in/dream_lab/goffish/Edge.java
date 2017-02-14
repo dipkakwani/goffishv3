@@ -26,8 +26,16 @@ public class Edge<E extends Writable, I extends Writable, J extends Writable> im
   private J edgeID;
   private I _sink;
   
+  Edge(J id) {
+    edgeID = id;
+  }
+  
   Edge(J id, I sinkID) {
     edgeID = id;
+    _sink = sinkID;
+  }
+  
+  void setSinkID(I sinkID) {
     _sink = sinkID;
   }
   
