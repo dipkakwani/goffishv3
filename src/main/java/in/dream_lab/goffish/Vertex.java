@@ -19,6 +19,7 @@ package in.dream_lab.goffish;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.hadoop.io.Writable;
@@ -31,13 +32,21 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   private I vertexID;
   private V _value;
   
+  Vertex() {
+    _adjList = new LinkedList<IEdge<E, I, J>>();
+  }
+  
   Vertex(I ID) {
     vertexID = ID;
-    _adjList = new ArrayList<IEdge<E, I, J>>();
+    _adjList = new LinkedList<IEdge<E, I, J>>();
   }
   
   void addEdge(IEdge<E, I, J> edge) {
     _adjList.add(edge);
+  }
+  
+  void setVertexID(I vertexID) {
+    this.vertexID = vertexID;
   }
   
   @Override
