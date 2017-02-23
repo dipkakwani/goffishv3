@@ -97,7 +97,7 @@ public class PartitionsLongTextAdjacencyListReader<S extends Writable, V extends
     LOG.info("Free Memory in Reader: " + runtime.freeMemory() / mb + " Total Memory: " + runtime.totalMemory() / mb);
     
     LOG.info("Free Memory after Reaching reader " + Runtime.getRuntime().freeMemory());
-    System.out.println(Runtime.getRuntime().freeMemory());
+    //System.out.println(Runtime.getRuntime().freeMemory());
     
     KeyValuePair<Writable, Writable> pair;
     pair = peer.readNext();
@@ -326,6 +326,9 @@ public class PartitionsLongTextAdjacencyListReader<S extends Writable, V extends
       for (IEdge<E, LongWritable, LongWritable> edge : vertex.outEdges()) {
         IVertex<V, E, LongWritable, LongWritable> sink = vertexMap
             .get(edge.getSinkVertexID().get());
+        if (sink == null) {
+          sink = remoteVertexMap.get(edge.getSinkVertexID().get());
+        }
         ds.union(vertex, sink);
       }
     }
