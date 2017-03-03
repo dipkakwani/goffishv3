@@ -41,8 +41,6 @@ public class VertexCountJob {
     pageJob.setInputKeyClass(LongWritable.class);
     pageJob.setInputValueClass(LongWritable.class);
     pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setOutputKeyClass(LongWritable.class);
-    pageJob.setOutputValueClass(LongWritable.class);
     pageJob.setInputPath(new Path(args[0]));
     pageJob.setOutputPath(new Path(args[1]));
     pageJob.setGraphMessageClass(LongWritable.class);

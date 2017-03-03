@@ -74,6 +74,7 @@ import org.apache.hama.util.UnsafeByteArrayInputStream;
 import org.apache.hama.util.WritableUtils;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 
@@ -114,11 +115,9 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
 
-    //System.out.println("BSP Setup");
     setupfields(peer);
     
-    /*TODO: Read input reader class type from Hama conf. 
-     * FIXME:Make type of Message generic in Reader. */
+    /*TODO: Read input reader class type from Hama conf. */
 
     Class<? extends IReader> readerClass = conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, PartitionsLongTextAdjacencyListReader.class, IReader.class);
     List<Object> params = new ArrayList<Object>();
@@ -235,18 +234,12 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       
       LOG.info("Application SuperStep "+getSuperStepCount());
       
-      List<IMessage<K, M>> messages = new ArrayList<IMessage<K, M>>();
-      Message<K, M> msg;
-      
-      while ((msg = peer.getCurrentMessage()) != null) {
-        messages.add(msg);
-      }
       //System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
       messageInFlight = false;
-      parseMessage(messages);
+      parseMessages();
       
       if (globalVoteToHalt && isMasterTask(peer)) {
         notifyJobEnd();
@@ -264,7 +257,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
           hasMessages = true;
         } else {
           // if null is passed to compute it might give null pointer exception
-          messagesToSubgraph = new ArrayList<>();
+          messagesToSubgraph = Lists.newLinkedList();
         }
         
         if (!subgraph.hasVotedToHalt() || hasMessages) {
@@ -282,8 +275,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       
     }
     
-    /* Uncomment for SSSP output
-    for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
+    /* Uncomment for SSSP output*/
+    /*for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
       ((SingleSourceShortestPath)subgraph).wrapup();
     }
     */
@@ -318,8 +311,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     sendMessage(peer.getPeerName(getMasterTaskIndex()), msg);
   }
   
-  void parseMessage(List<IMessage<K, M>> messages) {
-    for (IMessage<K, M> message : messages) {
+  void parseMessages() throws IOException {
+    
+    Message<K, M> message;
+    while ((message = peer.getCurrentMessage()) != null) {
       //Broadcast message, therefore every subgraph receives it
       if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.BROADCAST) {
         for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {

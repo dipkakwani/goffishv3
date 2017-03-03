@@ -130,7 +130,6 @@ public class GraphJob extends BSPJob {
 
   public void setGraphMessageClass(Class<? extends Writable> cls) {
     conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, cls, Writable.class);
-    //conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, ArrayWritable.class, Writable.class);
   }
 
   /**

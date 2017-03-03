@@ -18,6 +18,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
@@ -39,7 +40,7 @@ public class PageRankJob {
     pageJob.setOutputValueClass(LongWritable.class);
     pageJob.setInputPath(new Path(args[0]));
     pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(LongWritable.class);
+    pageJob.setGraphMessageClass(Text.class);
     
     //blocks till job completed
     pageJob.waitForCompletion(true);

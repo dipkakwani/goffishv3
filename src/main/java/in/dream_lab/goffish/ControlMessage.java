@@ -42,7 +42,7 @@ class ControlMessage implements IControlMessage{
   private IControlMessage.TransmissionType transmissionType;
   private Text vertexValues = new Text("");
   private List<BytesWritable> extraInfo;
-  private int partitionID;
+  private int sourcePartitionID;
   
   public ControlMessage() {
     transmissionType = IControlMessage.TransmissionType.NORMAL;
@@ -58,7 +58,7 @@ class ControlMessage implements IControlMessage{
     }
     
     if (isPartitionMessage()) {
-      out.writeInt(partitionID);
+      out.writeInt(sourcePartitionID);
     }
     else if(isVertexMessage()) {
       vertexValues.write(out);
@@ -77,7 +77,7 @@ class ControlMessage implements IControlMessage{
       extraInfo.add(info);
     }
     if (isPartitionMessage()) {
-      partitionID = in.readInt();
+      sourcePartitionID = in.readInt();
     }
     else if (isVertexMessage()) {
       vertexValues.readFields(in);
@@ -118,6 +118,7 @@ class ControlMessage implements IControlMessage{
   public boolean isNormalMessage() {
     return transmissionType == IControlMessage.TransmissionType.NORMAL;
   }
+  
   public boolean isPartitionMessage() {
     return transmissionType == IControlMessage.TransmissionType.PARTITION;
   }
@@ -134,7 +135,7 @@ class ControlMessage implements IControlMessage{
   @Override
   public String toString() {
     if(isPartitionMessage()) {
-      return String.valueOf(partitionID);
+      return String.valueOf(sourcePartitionID);
     }
     else if (isVertexMessage()) {
       return vertexValues.toString();
