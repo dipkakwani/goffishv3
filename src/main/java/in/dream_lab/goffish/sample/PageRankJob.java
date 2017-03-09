@@ -30,20 +30,18 @@ public class PageRankJob {
   public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
     
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob pageJob = new GraphJob(conf, PageRank.class);
-    pageJob.setJobName("Page Rank");
-    pageJob.setInputFormat(TextInputFormat.class);
-    pageJob.setInputKeyClass(LongWritable.class);
-    pageJob.setInputValueClass(LongWritable.class);
-    pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setOutputKeyClass(LongWritable.class);
-    pageJob.setOutputValueClass(LongWritable.class);
-    pageJob.setInputPath(new Path(args[0]));
-    pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(Text.class);
+    GraphJob job = new GraphJob(conf, PageRank.class);
+    job.setJobName("Page Rank");
+    job.setInputFormat(TextInputFormat.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(LongWritable.class);
+    job.setOutputFormat(TextOutputFormat.class);
+    job.setInputPath(new Path(args[0]));
+    job.setOutputPath(new Path(args[1]));
+    job.setGraphMessageClass(Text.class);
     
     //blocks till job completed
-    pageJob.waitForCompletion(true);
+    job.waitForCompletion(true);
   }
 
 }

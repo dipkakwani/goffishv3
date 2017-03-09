@@ -73,4 +73,10 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   public void setValue(V value) {
     _value = value;
   }
+  
+  @SuppressWarnings("rawtypes")
+  @Override
+  public boolean equals(Object o) {
+    return this.vertexID == ((IVertex)o).getVertexID();
+  }
 }
