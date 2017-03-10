@@ -68,7 +68,7 @@ public abstract class SubgraphCompute<S extends Writable, V extends Writable, E 
   }
 
   @Override
-  public void sendMessage(K subgraphID, Collection<M> messages) {
+  public void sendMessage(K subgraphID, Iterable<M> messages) {
     for (M message : messages) {
       this.sendMessage(subgraphID, message);
     }
@@ -85,7 +85,7 @@ public abstract class SubgraphCompute<S extends Writable, V extends Writable, E 
   }
 
   @Override
-  public void sendToAll(Collection<M> messages) {
+  public void sendToAll(Iterable<M> messages) {
     for (M message : messages) {
       this.sendToAll(message);
     }
@@ -97,7 +97,7 @@ public abstract class SubgraphCompute<S extends Writable, V extends Writable, E 
   }
 
   @Override
-  public void sendToNeighbors(Collection<M> messages) {
+  public void sendToNeighbors(Iterable<M> messages) {
     for (M message : messages) {
       this.sendToNeighbors(message);
     }
