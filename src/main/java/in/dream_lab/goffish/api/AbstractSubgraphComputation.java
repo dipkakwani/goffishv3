@@ -26,7 +26,7 @@ public abstract class AbstractSubgraphComputation<S extends Writable, V extends 
   private ISubgraphCompute<S, V, E, M, I, J, K> subgraphPlatformCompute;
 
   public long getSuperStep() {
-    return subgraphPlatformCompute.getSuperStep();
+    return subgraphPlatformCompute.getSuperstep();
   }
 
   public void setSubgraphPlatformCompute(ISubgraphCompute<S, V, E, M, I, J, K> subgraphPlatformCompute) {

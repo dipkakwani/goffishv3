@@ -29,13 +29,14 @@ import org.apache.hadoop.io.Writable;
  * @param <J> Edge ID object type
  * @param <K> Subgraph ID object type
  */
-public interface ISubgraphCompute <S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> {
-  
-  ISubgraph<S, V, E, I, J, K> getSubgraph();//templatize return type, G extends ISubgraph<S, V, E, I, J, K>
-  
+public interface ISubgraphCompute<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable> {
+
+  ISubgraph<S, V, E, I, J, K> getSubgraph();// templatize return type, G extends
+                                            // ISubgraph<S, V, E, I, J, K>
+
   void voteToHalt();
 
-  long getSuperStep();
+  long getSuperstep();
 
   void compute(Collection<IMessage<K, M>> messages);
 

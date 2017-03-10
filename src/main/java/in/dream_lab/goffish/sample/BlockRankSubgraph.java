@@ -60,20 +60,20 @@ public class BlockRankSubgraph extends
   private int _numPageRankFinishes;
 
   private void initialize() {
-    _localPageRanks = new HashMap<>((int)getSubgraph().vertexCount(), 1f);
-    _intermediateLocalSums = new HashMap<>((int)getSubgraph().vertexCount(), 1f);
+    _localPageRanks = new HashMap<>((int)getSubgraph().getVertexCount(), 1f);
+    _intermediateLocalSums = new HashMap<>((int)getSubgraph().getVertexCount(), 1f);
 
     for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph().getVertices()) {
       if (vertex.isRemote()) {
         continue;
       }
 
-      _localPageRanks.put(vertex.getVertexID().get(),
-          1.0D / getSubgraph().localVertexCount());
+      _localPageRanks.put(vertex.getVertexId().get(),
+          1.0D / getSubgraph().getLocalVertexCount());
     }
 
-    _numBlockOutEdges = (int)(getSubgraph().vertexCount()
-        - getSubgraph().localVertexCount());
+    _numBlockOutEdges = (int)(getSubgraph().getVertexCount()
+        - getSubgraph().getLocalVertexCount());
     _numSubgraphs = 0;
     _numVertices = 0;
 
@@ -86,7 +86,7 @@ public class BlockRankSubgraph extends
     BytesWritable s1 = new BytesWritable(
         Message.subgraphMessage().toBytes());
     BytesWritable s2 = new BytesWritable(
-        Message.numVerticesMessage((int) getSubgraph().localVertexCount())
+        Message.numVerticesMessage((int) getSubgraph().getLocalVertexCount())
             .toBytes());
       sendToAll(s1);
       sendToAll(s2);
@@ -102,7 +102,7 @@ public class BlockRankSubgraph extends
     List<Message> messages = decode(stuff);
 
     
-    if (getSuperStep() == 0) {
+    if (getSuperstep() == 0) {
       initialize();
 
       // calculate local page ranks
@@ -112,7 +112,7 @@ public class BlockRankSubgraph extends
       } while (e >= LOCALPAGERANK_EPSILON);
 
       return;
-    } else if (getSuperStep() == 1) {
+    } else if (getSuperstep() == 1) {
       _blockPageRank = 1.0D / _numSubgraphs;
     }
 
@@ -154,7 +154,7 @@ public class BlockRankSubgraph extends
         Message m = new Message(_blockPageRank / _numBlockOutEdges);
         for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> remoteVertex : getSubgraph().getRemoteVertices()) {
           BytesWritable s = new BytesWritable(m.toBytes());
-          sendMessage(remoteVertex.getSubgraphID(), s);
+          sendMessage(remoteVertex.getSubgraphId(), s);
         }
       }
 
@@ -179,12 +179,12 @@ public class BlockRankSubgraph extends
             // output results
             try (BufferedWriter output = new BufferedWriter(
                 new OutputStreamWriter(
-                    Files.newOutputStream(Paths.get("ss_" + getSuperStep()
-                        + "_subgraph_" + getSubgraph().getSubgraphID().get() + "_output"))))) {
+                    Files.newOutputStream(Paths.get("ss_" + getSuperstep()
+                        + "_subgraph_" + getSubgraph().getSubgraphId().get() + "_output"))))) {
               for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph().getVertices()) {
                 if (!vertex.isRemote()) {
                   output.write(
-                      vertex.getVertexID().get() + " " + _localPageRanks.get(vertex.getVertexID().get())
+                      vertex.getVertexId().get() + " " + _localPageRanks.get(vertex.getVertexId().get())
                           + System.lineSeparator());
                 }
               }
@@ -217,14 +217,14 @@ public class BlockRankSubgraph extends
   private double doPageRankIteration(boolean localOnly,
       Iterable<Message> messages, boolean sendMessagesOnly) {
     double L1norm = 0;
-    int numVertices = (localOnly ? (int)getSubgraph().vertexCount() : _numVertices);
+    int numVertices = (localOnly ? (int)getSubgraph().getVertexCount() : _numVertices);
 
     for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph().getVertices()) {
       if (vertex.isRemote()) {
         continue;
       }
 
-      _intermediateLocalSums.put(vertex.getVertexID().get(), 0.0D);
+      _intermediateLocalSums.put(vertex.getVertexId().get(), 0.0D);
     }
 
     // calculate sums from this subgraphs
@@ -235,24 +235,24 @@ public class BlockRankSubgraph extends
 
       int outDegree = 0;
       for (IEdge<LongWritable, LongWritable, LongWritable> edge : vertex
-          .outEdges()) {
-        if (!localOnly || !getSubgraph().getVertexByID(edge.getSinkVertexID())
+          .getOutEdges()) {
+        if (!localOnly || !getSubgraph().getVertexById(edge.getSinkVertexId())
             .isRemote()) {
           outDegree++;
         }
       }
 
-      double sentWeight = _localPageRanks.get(vertex.getVertexID().get()) / outDegree;
+      double sentWeight = _localPageRanks.get(vertex.getVertexId().get()) / outDegree;
 
-      for (IEdge<LongWritable, LongWritable, LongWritable> edge : vertex.outEdges()) {
-        LongWritable sinkVertexId = edge.getSinkVertexID();
-        if (getSubgraph().getVertexByID(sinkVertexId).isRemote()) {
+      for (IEdge<LongWritable, LongWritable, LongWritable> edge : vertex.getOutEdges()) {
+        LongWritable sinkVertexId = edge.getSinkVertexId();
+        if (getSubgraph().getVertexById(sinkVertexId).isRemote()) {
           if (!localOnly) {
             Message m = new Message(sinkVertexId.get(), sentWeight);
             BytesWritable s = new BytesWritable(m.toBytes());
             IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> remoteVertex = (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable>) getSubgraph()
-                .getVertexByID(sinkVertexId);
-            sendMessage(remoteVertex.getSubgraphID(), s);
+                .getVertexById(sinkVertexId);
+            sendMessage(remoteVertex.getSubgraphId(), s);
           }
         } else {
           _intermediateLocalSums.put(sinkVertexId.get(),
@@ -276,10 +276,10 @@ public class BlockRankSubgraph extends
           continue;
         }
 
-        double oldPageRank = _localPageRanks.get(vertex.getVertexID().get());
+        double oldPageRank = _localPageRanks.get(vertex.getVertexId().get());
         double newPageRank = (1 - D) / numVertices
-            + D * _intermediateLocalSums.get(vertex.getVertexID().get());
-        _localPageRanks.put(vertex.getVertexID().get(), newPageRank);
+            + D * _intermediateLocalSums.get(vertex.getVertexId().get());
+        _localPageRanks.put(vertex.getVertexId().get(), newPageRank);
         L1norm += Math.abs(newPageRank - oldPageRank);
       }
     }

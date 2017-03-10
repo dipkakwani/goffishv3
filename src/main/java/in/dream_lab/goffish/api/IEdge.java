@@ -25,13 +25,12 @@ import org.apache.hadoop.io.Writable;
  * @param <J> Edge ID object type
  */
 public interface IEdge<E extends Writable, I extends Writable, J extends Writable> {
-  
-  J getEdgeID();
-  
-  I getSinkVertexID();//add getSinkVertex();
-  						
-  
+
+  J getEdgeId();
+
+  I getSinkVertexId();// add getSinkVertex();
+
   E getValue();
-  
+
   void setValue(E value);
 }

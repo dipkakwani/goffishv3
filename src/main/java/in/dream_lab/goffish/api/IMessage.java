@@ -19,17 +19,19 @@ package in.dream_lab.goffish.api;
 
 import org.apache.hadoop.io.Writable;
 
-public interface IMessage <K extends Writable, M extends Writable> extends Writable {
+public interface IMessage<K extends Writable, M extends Writable>
+    extends Writable {
+
   enum MessageType {
-    VERTEX,
-    SUBGRAPH,
-    CUSTOM_MESSAGE,
+    VERTEX, 
+    SUBGRAPH, 
+    CUSTOM_MESSAGE, 
     MESSAGE_LIST
   }
-  
-  MessageType getMessageType();        // Enum: vertex, subgraph, custom-message, messagelist.
-  
-  K getSubgraphID(); // Auto filled by framework
-  
-  M getMessage(); // User defined type 
+
+  MessageType getMessageType();
+
+  K getSubgraphId(); // Auto filled by framework
+
+  M getMessage(); // User defined type
 }

@@ -257,7 +257,7 @@ public final class GraphJobRunnerPhases<S extends Writable, V extends Writable, 
 
       for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
         boolean hasMessages = false;
-        List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphID());
+        List<IMessage<K, M>> messagesToSubgraph = subgraphMessageMap.get(subgraph.getSubgraph().getSubgraphId());
         if (messagesToSubgraph != null) {
           hasMessages = true;
         } else {
@@ -295,7 +295,7 @@ public final class GraphJobRunnerPhases<S extends Writable, V extends Writable, 
     //System.out.println("Clean up!");
     
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      System.out.println(subgraph.getSubgraph().getValue());
+      System.out.println(subgraph.getSubgraph().getSubgraphValue());
     }
   }
 
@@ -323,19 +323,19 @@ public final class GraphJobRunnerPhases<S extends Writable, V extends Writable, 
       //Broadcast message, therefore every subgraph receives it
       if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.BROADCAST) {
         for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
-          List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(subgraph.getSubgraphID());
+          List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(subgraph.getSubgraphId());
           if(subgraphMessage == null) {
             subgraphMessage = new ArrayList<IMessage<K, M>>();
-            subgraphMessageMap.put(subgraph.getSubgraphID(), subgraphMessage);
+            subgraphMessageMap.put(subgraph.getSubgraphId(), subgraphMessage);
           }
           subgraphMessage.add(message);
         }
       }
       else if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.NORMAL) {
-        List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(message.getSubgraphID());
+        List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(message.getSubgraphId());
         if(subgraphMessage == null) {
           subgraphMessage = new ArrayList<IMessage<K, M>>();
-          subgraphMessageMap.put(message.getSubgraphID(), subgraphMessage);
+          subgraphMessageMap.put(message.getSubgraphId(), subgraphMessage);
         }
         subgraphMessage.add(message);
       }
@@ -410,7 +410,7 @@ public final class GraphJobRunnerPhases<S extends Writable, V extends Writable, 
   void sendToNeighbors(ISubgraph<S, V, E, I, J, K> subgraph, M message) {
     Set<K> sent = new HashSet<K>();
     for (IRemoteVertex<V, E, I, J, K> remotevertices: subgraph.getRemoteVertices()) {
-      K neighbourID = remotevertices.getSubgraphID();
+      K neighbourID = remotevertices.getSubgraphId();
       if (!sent.contains(neighbourID)) {
         sent.add(neighbourID);
         sendMessage(neighbourID, message);

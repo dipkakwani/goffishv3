@@ -50,7 +50,7 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   }
   
   @Override
-  public I getVertexID() {
+  public I getVertexId() {
     return vertexID;
   }
   
@@ -60,7 +60,7 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   }
   
   @Override
-  public Collection<IEdge<E, I, J>> outEdges() {
+  public Collection<IEdge<E, I, J>> getOutEdges() {
     return _adjList;
   }
 
@@ -77,6 +77,6 @@ public class Vertex<V extends Writable, E extends Writable, I extends Writable, 
   @SuppressWarnings("rawtypes")
   @Override
   public boolean equals(Object o) {
-    return this.vertexID == ((IVertex)o).getVertexID();
+    return this.vertexID == ((IVertex)o).getVertexId();
   }
 }
