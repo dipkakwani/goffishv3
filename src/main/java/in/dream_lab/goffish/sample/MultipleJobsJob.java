@@ -16,41 +16,58 @@
 
 package in.dream_lab.goffish.sample;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+
+import in.dream_lab.goffish.GraphJob;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
-import in.dream_lab.goffish.GraphJob;
-import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
-import in.dream_lab.goffish.humus.api.NonSplitTextInputFormat;
-
-public class BlockRankSubgraphJob {
+public class MultipleJobsJob {
   
   public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
-    
+    //NOt yet done
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob job = new GraphJob(conf, BlockRankSubgraph.class);
-    job.setJobName("Block Rank Subgraph");
-    job.setInputFormat(NonSplitTextInputFormat.class);
-    //job.setInputFormat(TextInputFormat.class);
+    GraphJob job = new GraphJob(conf, PageRank.class);
+    job.setJobName("Multiple Jobs");
+    job.setInputFormat(TextInputFormat.class);
     job.setInputKeyClass(LongWritable.class);
     job.setInputValueClass(LongWritable.class);
     job.setOutputFormat(TextOutputFormat.class);
     job.setInputPath(new Path(args[0]));
     job.setOutputPath(new Path(args[1]));
-    job.setGraphMessageClass(BytesWritable.class);
+    job.setGraphMessageClass(Text.class);
     
-    /* Reader configuration */
-    // job.setInputFormat(NonSplitTextInputFormat.class);
-    // job.setInputFormat(TextInputFormat.class);
-    job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
-
-    // blocks till job completed
+    String jobClasses = "";
+    String jobArgs = "";
+    if (args[2].equals("-f")) {
+      //take input from a file
+      BufferedReader fileReader = new BufferedReader(new FileReader(args[3]));
+      String jobInfo = "";
+      while((jobInfo = fileReader.readLine()) != null) {
+        String jobInfoArr[] = jobInfo.trim().split("\\s+");
+        jobClasses += jobInfoArr[0] + ";";
+        //if job has no arguments just add another ; with no value
+        jobArgs += ((jobInfoArr.length > 1) ? (jobInfoArr[1] +";") : ";");
+      }
+    }
+    else {
+      //take from command line
+    }
+    
+    job.setInitialInput(jobClasses + "-" + jobArgs);
+    
+    //blocks till job completed
     job.waitForCompletion(true);
   }
 }

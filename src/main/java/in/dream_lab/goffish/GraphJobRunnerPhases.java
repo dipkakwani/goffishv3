@@ -55,6 +55,7 @@ import org.apache.hama.bsp.Combiner;
 import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.PartitioningRunner;
+import org.apache.hama.bsp.SuperstepBSP;
 import org.apache.hama.bsp.sync.SyncException;
 import org.apache.hama.commons.util.KeyValuePair;
 
@@ -87,8 +88,8 @@ import in.dream_lab.goffish.sample.*;
  * @param <M> the value type of a vertex.
  */
 
-public final class GraphJobRunner<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
-    extends BSP<Writable, Writable, Writable, Writable, Message<K, M>> {
+public final class GraphJobRunnerPhases<S extends Writable, V extends Writable, E extends Writable, M extends Writable, I extends Writable, J extends Writable, K extends Writable>
+    extends SuperstepBSP<Writable, Writable, Writable, Writable, Message<K, M>> {
 
   
   /* Maintains statistics about graph job. Updated by master. */
@@ -96,7 +97,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     ACTIVE_SUBGRAPHS, VERTEX_COUNT, EDGE_COUNT , ITERATIONS
   }
   
-  public static final Log LOG = LogFactory.getLog(GraphJobRunner.class);
+  public static final Log LOG = LogFactory.getLog(GraphJobRunnerPhases.class);
   
   private Partition<S, V, E, I, J, K> partition;
   private BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer;
@@ -115,6 +116,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
 
+    super.setup(peer);
+    
     setupfields(peer);
     
     /*TODO: Read input reader class type from Hama conf. */
@@ -123,11 +126,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     List<Object> params = new ArrayList<Object>();
     params.add(peer);
     params.add(subgraphPartitionMap);
-    Class paramClasses[] = {BSPPeer.class, Map.class};
     
     IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
-        ReflectionUtils.newInstance(readerClass, paramClasses, params.toArray());
-        //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new PartitionsLongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
+        //ReflectionUtils.newInstance(readerClass, params.toArray());
+        (IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new PartitionsLongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
         //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextJSONReader<>(peer, subgraphPartitionMap);
         //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     
@@ -194,6 +196,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException, SyncException, InterruptedException {
     
+    
+    
     /*TODO: Make execute subgraphs compute in parallel.
     ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors
         .newCachedThreadPool();
@@ -214,7 +218,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         SubgraphCompute<S, V, E, M, I, J, K> subgraphComputeRunner = ReflectionUtils
             .newInstance(subgraphComputeClass, params);
         subgraphComputeRunner.setSubgraph(subgraph);
-        subgraphComputeRunner.init(this);
+        //subgraphComputeRunner.init(this);
         subgraphs.add(subgraphComputeRunner);
         continue;
       }
@@ -224,7 +228,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       SubgraphCompute<S, V, E, M, I, J, K> subgraphComputeRunner = ReflectionUtils
           .newInstance(subgraphComputeClass);
       subgraphComputeRunner.setSubgraph(subgraph);
-      subgraphComputeRunner.init(this);
+      //subgraphComputeRunner.init(this);
       subgraphs.add(subgraphComputeRunner);
     }
     

@@ -101,19 +101,21 @@ public class PageRank extends
       }
 
       // System.out.println(messages.size() + " messages recieved");
-
-      // update weights
-      for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()
-          .getVertices()) {
-        if (vertex.isRemote()) {
-          continue;
+      //to make the code comparable to Giraph SimplePageRank
+      if (getSuperStep() >= 1) {
+        // update weights
+        for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()
+            .getVertices()) {
+          if (vertex.isRemote()) {
+            continue;
+          }
+          myD = sums.get(vertex.getVertexID().get());
+          double pr = 0.15 + 0.85 * myD.d;
+          _weights.put(vertex.getVertexID().get(), pr);
+          // set sum of non-remote vertices to zero here to avoid doing it at
+          // start of next superstep
+          myD.d = 0d;
         }
-        myD = sums.get(vertex.getVertexID().get());
-        double pr = 0.15 + 0.85 * myD.d;
-        _weights.put(vertex.getVertexID().get(), pr);
-        // set sum of non-remote vertices to zero here to avoid doing it at
-        // start of next superstep
-        myD.d = 0d;
       }
     }
 

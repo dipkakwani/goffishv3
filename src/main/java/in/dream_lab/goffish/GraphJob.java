@@ -19,32 +19,25 @@ package in.dream_lab.goffish;
 
 import java.io.IOException;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hama.Constants;
 import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.BSPJob;
 import org.apache.hama.bsp.Combiner;
-import org.apache.hama.bsp.HashPartitioner;
 import org.apache.hama.bsp.Partitioner;
 import org.apache.hama.bsp.BSPJob.JobState;
 import org.apache.hama.bsp.PartitioningRunner.RecordConverter;
 import org.apache.hama.bsp.message.MessageManager;
 import org.apache.hama.bsp.message.OutgoingMessageManager;
 import org.apache.hama.bsp.message.queue.MessageQueue;
-import org.apache.hama.bsp.taskallocation.RoundRobinTaskAllocator;
-import org.apache.hama.bsp.taskallocation.TaskAllocationStrategy;
 
 import com.google.common.base.Preconditions;
 
 import in.dream_lab.goffish.api.ISubgraph;
 import in.dream_lab.goffish.api.ISubgraphCompute;
 import in.dream_lab.goffish.humus.api.IReader;
-import in.dream_lab.goffish.utils.LongArrayListWritable;
 
 public class GraphJob extends BSPJob {
   
@@ -57,20 +50,29 @@ public class GraphJob extends BSPJob {
   public final static String EDGE_VALUE_CLASS_ATTR = "in.dream_lab.goffish.edgevalue.class";
   public final static String SUBGRAPH_ID_CLASS_ATTR = "in.dream_lab.goffish.subgraphid.class";
   public final static String SUBGRAPH_VALUE_CLASS_ATTR = "in.dream_lab.goffish.subgraphvalue.class";
-  
+  public final static String READER_CLASS_ATTR = "in.dream_lab.goffish.reader.class";
+
   public final static String INITIAL_VALUE = "in.dream_lab.goffish.initialvalue";
-  
-  public GraphJob(HamaConfiguration conf, Class<? extends SubgraphCompute> exampleClass)
-      throws IOException {
-    super(conf); 
+
+  public GraphJob(HamaConfiguration conf,
+      Class<? extends SubgraphCompute> exampleClass) throws IOException {
+
+    super(conf);
     conf.setBoolean(Constants.ENABLE_RUNTIME_PARTITIONING, false);
     conf.setBoolean("hama.use.unsafeserialization", true);
     conf.setClass(SUBGRAPH_CLASS_ATTR, Subgraph.class, ISubgraph.class);
-    conf.setClass(SUBGRAPH_COMPUTE_CLASS_ATTR, exampleClass, SubgraphCompute.class);
+    conf.setClass(SUBGRAPH_COMPUTE_CLASS_ATTR, exampleClass,
+        SubgraphCompute.class);
+
     this.setBspClass(GraphJobRunner.class);
+    // Helps to determine the user's jar to distribute in the cluster.
     this.setJarByClass(exampleClass);
-    //this.setPartitioner(HashPartitioner.class);
-    conf.setClass(Constants.TASK_ALLOCATOR_CLASS, RoundRobinTaskAllocator.class, TaskAllocationStrategy.class);
+    // setting default values
+    this.setVertexIDClass(LongWritable.class);
+    this.setEdgeIDClass(LongWritable.class);
+    this.setSubgraphIDClass(LongWritable.class);
+
+    // this.setPartitioner(HashPartitioner.class);
   }
 
   @Override
@@ -78,8 +80,7 @@ public class GraphJob extends BSPJob {
       @SuppressWarnings("rawtypes") Class<? extends Partitioner> theClass) {
     super.setPartitioner(theClass);
   }
-  
-  
+
   /**
    * Set the Vertex ID class for the job.
    */
@@ -111,7 +112,7 @@ public class GraphJob extends BSPJob {
       throws IllegalStateException {
     conf.setClass(EDGE_VALUE_CLASS_ATTR, cls, Writable.class);
   }
-  
+
   /**
    * Set the Edge ID class for the job.
    */
@@ -136,15 +137,15 @@ public class GraphJob extends BSPJob {
    * Use RicherSubgraph Class instead of Subgraph for more features
    */
   public void useRicherSubgraph(boolean use) {
-    if(use) {
+    if (use) {
       conf.setClass(SUBGRAPH_CLASS_ATTR, RicherSubgraph.class, ISubgraph.class);
     }
   }
-  
+
   /**
    * Set the Subgraph class for the job.
    */
-  //is this needed? can use exampleclass in constructor to do this
+  // is this needed? can use exampleclass in constructor to do this
   public void setSubgraphComputeClass(
       Class<? extends SubgraphCompute<? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable, ? extends Writable>> cls)
       throws IllegalStateException {
@@ -152,24 +153,24 @@ public class GraphJob extends BSPJob {
     setInputKeyClass(cls);
     setInputValueClass(NullWritable.class);
   }
-  
+
   /**
    * Sets the input reader for parsing the input to vertices.
    */
   public void setInputReaderClass(
       @SuppressWarnings("rawtypes") Class<? extends IReader> cls) {
-    conf.setClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, cls,
-        IReader.class);
+    conf.setClass(READER_CLASS_ATTR, cls, IReader.class);
   }
 
   /**
    * Sets the maximum number of supersteps for the application
+   * 
    * @param maxIteration
    */
   public void setMaxIteration(int maxIteration) {
     conf.setInt("hama.graph.max.iteration", maxIteration);
   }
-  
+
   /**
    * Sets the initial value that is passed to the constructor of the application
    * at runtime
@@ -179,7 +180,7 @@ public class GraphJob extends BSPJob {
   public void setInitialInput(String input) {
     conf.set(INITIAL_VALUE, input);
   }
-  
+
   @Override
   public void submit() throws IOException, InterruptedException {
     super.submit();

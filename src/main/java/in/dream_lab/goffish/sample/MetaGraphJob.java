@@ -28,26 +28,32 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
 
 public class MetaGraphJob {
   
   public static void main(String args[]) throws IOException,InterruptedException, ClassNotFoundException, ParseException {
     
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob pageJob = new GraphJob(conf, MetaGraph.class);
-    pageJob.setJobName("Meta Graph");
-    pageJob.setInputFormat(TextInputFormat.class);
-    pageJob.setInputKeyClass(LongWritable.class);
-    pageJob.setInputValueClass(LongWritable.class);
-    pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setOutputKeyClass(LongWritable.class);
-    pageJob.setOutputValueClass(LongWritable.class);
-    pageJob.setMaxIteration(2);
-    pageJob.setInputPath(new Path(args[0]));
-    pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(LongWritable.class);
+    GraphJob job = new GraphJob(conf, MetaGraph.class);
+    job.setJobName("Meta Graph");
+    job.setInputFormat(TextInputFormat.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(LongWritable.class);
+    job.setOutputFormat(TextOutputFormat.class);
+    job.setOutputKeyClass(LongWritable.class);
+    job.setOutputValueClass(LongWritable.class);
+    job.setMaxIteration(2);
+    job.setInputPath(new Path(args[0]));
+    job.setOutputPath(new Path(args[1]));
+    job.setGraphMessageClass(LongWritable.class);
     
-  //blocks till job completed
-    pageJob.waitForCompletion(true);
+    /* Reader configuration */
+    // job.setInputFormat(NonSplitTextInputFormat.class);
+    // job.setInputFormat(TextInputFormat.class);
+    job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
+    
+    //blocks till job completed
+    job.waitForCompletion(true);
   }
 }

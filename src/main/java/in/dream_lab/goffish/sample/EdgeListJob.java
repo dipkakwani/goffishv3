@@ -28,25 +28,31 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
 
 
 public class EdgeListJob {
   public static void main(String args[]) throws IOException,InterruptedException, ClassNotFoundException, ParseException
   {
           HamaConfiguration conf = new HamaConfiguration();
-          GraphJob pageJob = new GraphJob(conf, EdgeList.class);
-          pageJob.setJobName("Edge List");
-          pageJob.setInputFormat(TextInputFormat.class);
-          pageJob.setInputKeyClass(LongWritable.class);
-          pageJob.setInputValueClass(LongWritable.class);
-          pageJob.setOutputFormat(TextOutputFormat.class);
-          pageJob.setOutputKeyClass(LongWritable.class);
-          pageJob.setOutputValueClass(LongWritable.class);
-          pageJob.setInputPath(new Path(args[0]));
-          pageJob.setOutputPath(new Path(args[1]));
-          pageJob.setGraphMessageClass(LongWritable.class);
+          GraphJob job = new GraphJob(conf, EdgeList.class);
+          job.setJobName("Edge List");
+          job.setInputFormat(TextInputFormat.class);
+          job.setInputKeyClass(LongWritable.class);
+          job.setInputValueClass(LongWritable.class);
+          job.setOutputFormat(TextOutputFormat.class);
+          job.setOutputKeyClass(LongWritable.class);
+          job.setOutputValueClass(LongWritable.class);
+          job.setInputPath(new Path(args[0]));
+          job.setOutputPath(new Path(args[1]));
+          job.setGraphMessageClass(LongWritable.class);
+          
+          /* Reader configuration */
+          // job.setInputFormat(NonSplitTextInputFormat.class);
+          // job.setInputFormat(TextInputFormat.class);
+          job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
           
           //blocks till job completed
-          pageJob.waitForCompletion(true);
+          job.waitForCompletion(true);
   }
 }

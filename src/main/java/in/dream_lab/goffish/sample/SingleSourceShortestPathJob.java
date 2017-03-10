@@ -28,27 +28,33 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
 
 public class SingleSourceShortestPathJob {
 
   public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
     
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob pageJob = new GraphJob(conf, SingleSourceShortestPath.class);
-    pageJob.setJobName("Single Source Shortest Path");
-    pageJob.setInputFormat(TextInputFormat.class);
-    pageJob.setInputKeyClass(LongWritable.class);
-    pageJob.setInputValueClass(LongWritable.class);
-    pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setOutputKeyClass(LongWritable.class);
-    pageJob.setOutputValueClass(LongWritable.class);
-    pageJob.setInputPath(new Path(args[0]));
-    pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(Text.class);
+    GraphJob job = new GraphJob(conf, SingleSourceShortestPath.class);
+    job.setJobName("Single Source Shortest Path");
+    job.setInputFormat(TextInputFormat.class);
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(LongWritable.class);
+    job.setOutputFormat(TextOutputFormat.class);
+    job.setOutputKeyClass(LongWritable.class);
+    job.setOutputValueClass(LongWritable.class);
+    job.setInputPath(new Path(args[0]));
+    job.setOutputPath(new Path(args[1]));
+    job.setGraphMessageClass(Text.class);
     //Source vertexID
-    pageJob.setInitialInput(args[2]);
+    job.setInitialInput(args[2]);
+    
+    /* Reader configuration */
+    // job.setInputFormat(NonSplitTextInputFormat.class);
+    // job.setInputFormat(TextInputFormat.class);
+    job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
 
     // blocks till job completed
-    pageJob.waitForCompletion(true);
+    job.waitForCompletion(true);
   }
 }

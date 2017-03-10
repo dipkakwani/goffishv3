@@ -27,6 +27,7 @@ import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
 import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
 import in.dream_lab.goffish.humus.api.NonSplitTextInputFormat;
 
 
@@ -34,20 +35,22 @@ public class VertexCountJob {
   
   public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob pageJob = new GraphJob(conf, VertexCount.class);
-    pageJob.setJobName("Vertex Count");
-    pageJob.setInputFormat(NonSplitTextInputFormat.class);
-    //pageJob.setInputFormat(TextInputFormat.class);
-    pageJob.setInputKeyClass(LongWritable.class);
-    pageJob.setInputValueClass(LongWritable.class);
-    pageJob.setOutputFormat(TextOutputFormat.class);
-    pageJob.setInputPath(new Path(args[0]));
-    pageJob.setOutputPath(new Path(args[1]));
-    pageJob.setGraphMessageClass(LongWritable.class);
+    GraphJob job = new GraphJob(conf, VertexCount.class);
+    job.setJobName("Vertex Count");
+    job.setInputKeyClass(LongWritable.class);
+    job.setInputValueClass(LongWritable.class);
+    job.setOutputFormat(TextOutputFormat.class);
+    job.setInputPath(new Path(args[0]));
+    job.setOutputPath(new Path(args[1]));
+    job.setGraphMessageClass(LongWritable.class);
     
+    /* Reader configuration */
+    //job.setInputFormat(NonSplitTextInputFormat.class);
+    //job.setInputFormat(TextInputFormat.class);
+    job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
+
     
-    System.out.println("Free Memory before running = "+Runtime.getRuntime().freeMemory());
     //blocks till job completed
-    pageJob.waitForCompletion(true);
+    job.waitForCompletion(true);
   }
 }
