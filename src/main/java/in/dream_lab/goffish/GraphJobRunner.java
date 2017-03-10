@@ -119,7 +119,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     
     /*TODO: Read input reader class type from Hama conf. */
 
-    Class<? extends IReader> readerClass = conf.getClass(Constants.RUNTIME_PARTITION_RECORDCONVERTER, PartitionsLongTextAdjacencyListReader.class, IReader.class);
+    Class<? extends IReader> readerClass = conf.getClass(GraphJob.READER_CLASS_ATTR, LongTextAdjacencyListReader.class, IReader.class);
     List<Object> params = new ArrayList<Object>();
     params.add(peer);
     params.add(subgraphPartitionMap);

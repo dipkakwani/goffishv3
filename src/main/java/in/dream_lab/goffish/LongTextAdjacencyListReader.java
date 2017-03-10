@@ -264,7 +264,7 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
             Longs.fromByteArray(queryResponse.next().getBytes()));
         LongWritable remoteSubgraphID = new LongWritable(
             Longs.fromByteArray(queryResponse.next().getBytes()));
-        RemoteVertex<V, E, LongWritable, LongWritable, LongWritable> sink = (RemoteVertex<V, E, LongWritable, LongWritable, LongWritable>) vertexMap
+        RemoteVertex<V, E, LongWritable, LongWritable, LongWritable> sink = (RemoteVertex<V, E, LongWritable, LongWritable, LongWritable>) remoteVertexMap
             .get(sinkID.get());
         if (sink == null) {
           System.out.println("NULLLL" + sink);
