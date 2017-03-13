@@ -40,7 +40,7 @@ import in.dream_lab.goffish.api.ISubgraphCompute;
 import in.dream_lab.goffish.humus.api.IReader;
 
 public class GraphJob extends BSPJob {
-  
+
   public final static String SUBGRAPH_COMPUTE_CLASS_ATTR = "in.dream_lab.goffish.subgraphcompute.class";
   public final static String SUBGRAPH_CLASS_ATTR = "in.dream_lab.goffish.subgraph.class";
   public final static String GRAPH_MESSAGE_CLASS_ATTR = "in.dream_lab.goffish.message.class";
@@ -96,7 +96,7 @@ public class GraphJob extends BSPJob {
       throws IllegalStateException {
     conf.setClass(VERTEX_VALUE_CLASS_ATTR, cls, Writable.class);
   }
-  
+
   /**
    * Set the Edge ID class for the job.
    */
@@ -114,7 +114,7 @@ public class GraphJob extends BSPJob {
   }
 
   /**
-   * Set the Edge ID class for the job.
+   * Set the Subgraph ID class for the job.
    */
   public void setSubgraphIDClass(Class<? extends Writable> cls)
       throws IllegalStateException {
@@ -122,13 +122,18 @@ public class GraphJob extends BSPJob {
   }
 
   /**
-   * Set the Edge value class for the job.
+   * Set the Subgraph value class for the job.
    */
   public void setSubgraphValueClass(Class<? extends Writable> cls)
       throws IllegalStateException {
     conf.setClass(SUBGRAPH_VALUE_CLASS_ATTR, cls, Writable.class);
   }
 
+  /**
+   * Set the Message Type for the Job.
+   * 
+   * @param cls
+   */
   public void setGraphMessageClass(Class<? extends Writable> cls) {
     conf.setClass(GRAPH_MESSAGE_CLASS_ATTR, cls, Writable.class);
   }

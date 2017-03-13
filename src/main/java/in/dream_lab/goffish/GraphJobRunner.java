@@ -123,13 +123,10 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     List<Object> params = new ArrayList<Object>();
     params.add(peer);
     params.add(subgraphPartitionMap);
-    Class paramClasses[] = {BSPPeer.class, Map.class};
+    Class<?> paramClasses[] = {BSPPeer.class, Map.class};
     
     IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K> reader = 
         ReflectionUtils.newInstance(readerClass, paramClasses, params.toArray());
-        //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new PartitionsLongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
-        //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextJSONReader<>(peer, subgraphPartitionMap);
-        //(IReader<Writable, Writable, Writable, Writable, S, V, E, I, J, K>)new LongTextAdjacencyListReader<S, V, E, K, M>(peer,subgraphPartitionMap);
     
     for (ISubgraph<S, V, E, I, J, K> subgraph: reader.getSubgraphs()) {
       partition.addSubgraph(subgraph);
@@ -235,19 +232,18 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       
       LOG.info("Application SuperStep "+getSuperStepCount());
       
-      //System.out.println(messages.size()+" Messages");
       subgraphMessageMap = new HashMap<K, List<IMessage<K, M>>>();
       globalVoteToHalt = (isMasterTask(peer) && getSuperStepCount() != 0) ? true : false;
       allVotedToHalt = true;
       messageInFlight = false;
       parseMessages();
-      
+
       if (globalVoteToHalt && isMasterTask(peer)) {
         notifyJobEnd();
-        peer.sync();    // Wait for all the peers to receive the message in next superstep.
+        peer.sync(); // Wait for all the peers to receive the message in next
+                     // superstep.
         break;
-      }
-      else if (globalVoteToHalt) {
+      } else if (globalVoteToHalt) {
         break;
       }
 
@@ -260,7 +256,7 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
           // if null is passed to compute it might give null pointer exception
           messagesToSubgraph = Lists.newLinkedList();
         }
-        
+
         if (!subgraph.hasVotedToHalt() || hasMessages) {
           subgraph.setActive();
           subgraph.compute(messagesToSubgraph);
@@ -269,18 +265,18 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
         }
       }
       sendHeartBeat();
-      
+
       peer.getCounter(GraphJobCounter.ITERATIONS).increment(1);
-      
+
       peer.sync();
-      
+
     }
-    
-    /* Uncomment for SSSP output*/
-    /*for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
-      ((SingleSourceShortestPath)subgraph).wrapup();
-    }
-    */
+
+    /* Uncomment for SSSP output */
+    /*
+    for (SubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
+      ((SingleSourceShortestPath)subgraph).wrapup(); }
+     */
 
   }
 
@@ -288,8 +284,8 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
   public final void cleanup(
       BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer)
       throws IOException {
-    //System.out.println("Clean up!");
-    
+    // System.out.println("Clean up!");
+
     for (ISubgraphCompute<S, V, E, M, I, J, K> subgraph : subgraphs) {
       System.out.println(subgraph.getSubgraph().getSubgraphValue());
     }
@@ -311,71 +307,78 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
     msg.setControlInfo(controlInfo);
     sendMessage(peer.getPeerName(getMasterTaskIndex()), msg);
   }
-  
+
   void parseMessages() throws IOException {
-    
+
     Message<K, M> message;
     while ((message = peer.getCurrentMessage()) != null) {
-      //Broadcast message, therefore every subgraph receives it
-      if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.BROADCAST) {
+      // Broadcast message, therefore every subgraph receives it
+      if (((Message<K, M>) message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.BROADCAST) {
         for (ISubgraph<S, V, E, I, J, K> subgraph : partition.getSubgraphs()) {
           List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(subgraph.getSubgraphId());
-          if(subgraphMessage == null) {
+          if (subgraphMessage == null) {
             subgraphMessage = new ArrayList<IMessage<K, M>>();
             subgraphMessageMap.put(subgraph.getSubgraphId(), subgraphMessage);
           }
           subgraphMessage.add(message);
         }
       }
-      else if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.NORMAL) {
+      else if (((Message<K, M>) message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.NORMAL) {
         List<IMessage<K, M>> subgraphMessage = subgraphMessageMap.get(message.getSubgraphId());
-        if(subgraphMessage == null) {
+        if (subgraphMessage == null) {
           subgraphMessage = new ArrayList<IMessage<K, M>>();
           subgraphMessageMap.put(message.getSubgraphId(), subgraphMessage);
         }
         subgraphMessage.add(message);
       }
-      else if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.GLOBAL_HALT) {
+      else if (((Message<K, M>) message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.GLOBAL_HALT) {
         globalVoteToHalt = true;
       }
-      else if(((Message<K, M>)message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.HEARTBEAT) {
-        assert(isMasterTask(peer));
+      else if (((Message<K, M>) message).getControlInfo().getTransmissionType() == IControlMessage.TransmissionType.HEARTBEAT) {
+        assert (isMasterTask(peer));
         parseHeartBeat(message);
-      }
-      else {
+      } else {
         System.out.println("Invalid transmission type!");
       }
       /*
-       * TODO: Add implementation for partition message and vertex message(used for graph mutation)
+       * TODO: Add implementation for partition message and vertex message(used
+       * for graph mutation)
        */
     }
   }
-  
+
   /* Sets global vote to halt to false if any of the peer is still active. */
   void parseHeartBeat(IMessage<K, M> message) {
-    ControlMessage content = (ControlMessage)((Message<K, M>)message).getControlInfo();
-    byte []heartBeatRaw = content.getExtraInfo().iterator().next().getBytes();
+    ControlMessage content = (ControlMessage) ((Message<K, M>) message)
+        .getControlInfo();
+    byte[] heartBeatRaw = content.getExtraInfo().iterator().next().getBytes();
     int heartBeat = Ints.fromByteArray(heartBeatRaw);
-    if (heartBeat != 2) // Heartbeat msg = 0x10 when some subgraphs are still active
+    if (heartBeat != 2) // Heartbeat msg = 0x10 when some subgraphs are still
+                        // active
       globalVoteToHalt = false;
   }
 
   /* Returns true if the peer is the master task, else false. */
-  boolean isMasterTask(BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer) {
+  boolean isMasterTask(
+      BSPPeer<Writable, Writable, Writable, Writable, Message<K, M>> peer) {
     return (getMasterTaskIndex() == peer.getPeerIndex()) ? true : false;
   }
-  
+
   /* Peer 0 is the master task. */
   int getMasterTaskIndex() {
     return 0;
   }
-  
-  /* Sends message to the peer, which can later be parsed to reach the destination
-   * e.g. subgraph, vertex etc. Also updates the messageInFlight boolean. */
+
+  /*
+   * Sends message to the peer, which can later be parsed to reach the
+   * destination e.g. subgraph, vertex etc. Also updates the messageInFlight
+   * boolean.
+   */
   void sendMessage(String peerName, Message<K, M> message) {
     try {
       peer.send(peerName, message);
-      if(message.getControlInfo().getTransmissionType() != IControlMessage.TransmissionType.HEARTBEAT) {
+      if (message.getControlInfo()
+          .getTransmissionType() != IControlMessage.TransmissionType.HEARTBEAT) {
         messageInFlight = true;
       }
     } catch (IOException e) {
@@ -383,29 +386,31 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       e.printStackTrace();
     }
   }
- 
+
   /* Sends message to all the peers. */
   void sendToAll(Message<K, M> message) {
     for (String peerName : peer.getAllPeerNames()) {
       sendMessage(peerName, message);
     }
   }
-  
+
   void sendMessage(K subgraphID, M message) {
-    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, subgraphID, message);
+    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE,
+        subgraphID, message);
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.NORMAL);
     msg.setControlInfo(controlInfo);
     sendMessage(peer.getPeerName(subgraphPartitionMap.get(subgraphID)), msg);
   }
-    
+
   void sendToVertex(I vertexID, M message) {
-    //TODO
+    // TODO
   }
- 
+
   void sendToNeighbors(ISubgraph<S, V, E, I, J, K> subgraph, M message) {
     Set<K> sent = new HashSet<K>();
-    for (IRemoteVertex<V, E, I, J, K> remotevertices: subgraph.getRemoteVertices()) {
+    for (IRemoteVertex<V, E, I, J, K> remotevertices : subgraph
+        .getRemoteVertices()) {
       K neighbourID = remotevertices.getSubgraphId();
       if (!sent.contains(neighbourID)) {
         sent.add(neighbourID);
@@ -413,30 +418,34 @@ public final class GraphJobRunner<S extends Writable, V extends Writable, E exte
       }
     }
   }
-  
+
   void sendToAll(M message) {
-    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE, message);
+    Message<K, M> msg = new Message<K, M>(Message.MessageType.CUSTOM_MESSAGE,
+        message);
     ControlMessage controlInfo = new ControlMessage();
     controlInfo.setTransmissionType(IControlMessage.TransmissionType.BROADCAST);
     msg.setControlInfo(controlInfo);
     sendToAll(msg);
   }
-  
+
   long getSuperStepCount() {
     return peer.getCounter(GraphJobCounter.ITERATIONS).getCounter();
   }
-  
+
   int getPartitionID(K subgraphID) {
     return 0;
   }
-  
-  /* Master task notifies all the peers to finish bsp as all the subgraphs across all the peers
-   * have voted to halt and there is no message in flight. */
+
+  /*
+   * Master task notifies all the peers to finish bsp as all the subgraphs
+   * across all the peers have voted to halt and there is no message in flight.
+   */
   void notifyJobEnd() {
-    assert(isMasterTask(peer));
+    assert (isMasterTask(peer));
     Message<K, M> msg = new Message<K, M>();
     ControlMessage controlInfo = new ControlMessage();
-    controlInfo.setTransmissionType(IControlMessage.TransmissionType.GLOBAL_HALT);
+    controlInfo
+        .setTransmissionType(IControlMessage.TransmissionType.GLOBAL_HALT);
     msg.setControlInfo(controlInfo);
     sendToAll(msg);
   }
