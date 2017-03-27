@@ -99,28 +99,33 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
     LOG.info("Free Memory after Reaching reader " + Runtime.getRuntime().freeMemory());
     
     KeyValuePair<Writable, Writable> pair;
+    /*
     pair = peer.readNext();
     String metaInfo[] = pair.getValue().toString().trim().split(" ");
     long localVertexCount = Long.parseLong(metaInfo[0]);
     long partitionEdgeCount = Long.parseLong(metaInfo[1]);
-    long totalPartitionVertices = Long.parseLong(metaInfo[2]);
+    long totalPartitionVertices = Long.parseLong(metaInfo[2]);*/
     long edgeCount = 0;
 
-    vertexMap = Maps.newHashMapWithExpectedSize((int)localVertexCount);
-    remoteVertexMap = Maps.newHashMapWithExpectedSize((int)(totalPartitionVertices - localVertexCount));
+    vertexMap = Maps.newHashMap();
+    remoteVertexMap = Maps.newHashMap();
     
     LOG.info("SETUP Starting Free Memory: " + runtime.freeMemory() / mb + " Total Memory: " + runtime.totalMemory() / mb);
     LOG.info("SETUP Starting " + peer.getPeerIndex() + " Memory: "
         + Runtime.getRuntime().freeMemory());
+    int count = -1;
 
     while ((pair = peer.readNext()) != null) {
+      count++;
       // NOTE: Confirm that data starts from value and not from key.
       String stringInput = pair.getValue().toString();
       String vertexValue[] = stringInput.split("\\s+");
       
       LongWritable vertexID = new LongWritable(Long.parseLong(vertexValue[0]));
       Vertex<V, E, LongWritable, LongWritable> vertex = new Vertex<V, E, LongWritable, LongWritable>(vertexID);
-
+      if (count % 10000 == 0) {
+          //LOG.info("Read " + count + " lines. Size of vertex adjacency list: " + vertexValue.length);
+      }
       for (int j = 1; j < vertexValue.length; j++) {
         LongWritable sinkID = new LongWritable(Long.parseLong(vertexValue[j]));
         LongWritable edgeID = new LongWritable(
@@ -128,7 +133,9 @@ public class LongTextAdjacencyListReader<S extends Writable, V extends Writable,
         Edge<E, LongWritable, LongWritable> e = new Edge<E, LongWritable, LongWritable>(edgeID, sinkID);
         vertex.addEdge(e);
       }
-
+      if (count % 10000 == 0) {
+        //LOG.info("Created vertex object.");
+      }
       vertexMap.put(vertexID.get(), vertex);
 
     }
