@@ -114,10 +114,11 @@ public class SingleSourceShortestPathWeighted extends
 
   /***
    * MAIN COMPUTE METHOD
+   * @param packedSubGraphMessages
    */
   @Override
   public void compute(
-      Collection<IMessage<LongWritable, Text>> packedSubGraphMessages) {
+      Iterable<IMessage<LongWritable, Text>> packedSubGraphMessages) {
 
     long subgraphStartTime = System.currentTimeMillis();
 
@@ -130,8 +131,8 @@ public class SingleSourceShortestPathWeighted extends
         //logFileName = "SP_" + partitionId + "_" + subgraphId + ".log";
       }
 
-      log("START superstep with received input messages count = "
-          + packedSubGraphMessages.size());
+      //log("START superstep with received input messages count = "
+      //    + packedSubGraphMessages.size());
 
       Set<IVertex<LongWritable, LongWritable, LongWritable, LongWritable>> rootVertices = null;
 
@@ -379,7 +380,7 @@ public class SingleSourceShortestPathWeighted extends
   }
 
   private List<String> unpackSubgraphMessages(
-      Collection<IMessage<LongWritable, Text>> packedSubGraphMessages) {
+      Iterable<IMessage<LongWritable, Text>> packedSubGraphMessages) {
 
     List<String> remoteMessages = new ArrayList<String>();
     for (IMessage<LongWritable, Text> message : packedSubGraphMessages) {

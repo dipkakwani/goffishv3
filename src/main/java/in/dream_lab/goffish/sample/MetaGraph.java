@@ -17,8 +17,6 @@
  */
 package in.dream_lab.goffish.sample;
 
-import java.util.Collection;
-
 import org.apache.hadoop.io.LongWritable;
 
 import in.dream_lab.goffish.SubgraphCompute;
@@ -30,7 +28,7 @@ public class MetaGraph extends
 
   @Override
   public void compute(
-      Collection<IMessage<LongWritable, LongWritable>> messages) {
+      Iterable<IMessage<LongWritable, LongWritable>> messages) {
     if (getSuperstep() == 0) {
       long sid = getSubgraph().getSubgraphId().get();
       for (IRemoteVertex<LongWritable, LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()

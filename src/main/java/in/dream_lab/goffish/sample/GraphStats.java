@@ -19,7 +19,6 @@
 package in.dream_lab.goffish.sample;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +52,7 @@ public class GraphStats extends
   
   @Override
   public void compute(
-      Collection<IMessage<LongWritable, Text>> messages) {
+      Iterable<IMessage<LongWritable, Text>> messages) {
     // TODO Auto-generated method stub
     /*
      * Vertex count,

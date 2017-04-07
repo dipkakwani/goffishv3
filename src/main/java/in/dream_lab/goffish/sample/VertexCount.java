@@ -17,8 +17,6 @@
  */
 package in.dream_lab.goffish.sample;
 
-import java.util.Collection;
-
 import org.apache.hadoop.io.LongWritable;
 
 import in.dream_lab.goffish.SubgraphCompute;
@@ -35,7 +33,7 @@ public class VertexCount extends
 
   @Override
   public void compute(
-      Collection<IMessage<LongWritable, LongWritable>> messages) {
+      Iterable<IMessage<LongWritable, LongWritable>> messages) {
     if (getSuperstep() == 0) {
       long count = getSubgraph().getLocalVertexCount();
       LongWritable message = new LongWritable(count);

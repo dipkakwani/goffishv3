@@ -31,7 +31,6 @@ import org.json.simple.JSONArray;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -76,7 +75,7 @@ public class GenerateWeights extends
   }
 
   @Override
-  public void compute(Collection<IMessage<LongWritable, Text>> iMessages) {
+  public void compute(Iterable<IMessage<LongWritable, Text>> iMessages) {
 
     if (getSuperstep() == 0) {
       LOG.info("Starting first superstep");

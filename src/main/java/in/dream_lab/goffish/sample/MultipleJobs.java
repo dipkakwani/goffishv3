@@ -18,7 +18,6 @@
 
 package in.dream_lab.goffish.sample;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +47,7 @@ public class MultipleJobs extends
   }
 
   @Override
-  public void compute(Collection<IMessage<LongWritable, Text>> messages) {
+  public void compute(Iterable<IMessage<LongWritable, Text>> messages) {
     // TODO Auto-generated method stub
     
   }

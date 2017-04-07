@@ -17,8 +17,6 @@
  */
 package in.dream_lab.goffish.sample;
 
-import java.util.Collection;
-
 import org.apache.hadoop.io.LongWritable;
 
 import in.dream_lab.goffish.SubgraphCompute;
@@ -32,7 +30,7 @@ public class ConnectedComponents extends
 
   @Override
   public void compute(
-      Collection<IMessage<LongWritable, LongWritable>> messages) {
+      Iterable<IMessage<LongWritable, LongWritable>> messages) {
 
     if (getSuperstep() == 0) {
       minSubgraphID = getSubgraph().getSubgraphId().get();
