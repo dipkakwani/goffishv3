@@ -24,16 +24,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.ByteWritable;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
 import com.google.common.collect.Lists;
-import com.google.common.primitives.Ints;
-import com.google.common.primitives.Longs;
 
 import in.dream_lab.goffish.humus.api.IControlMessage;
 
@@ -42,23 +37,26 @@ class ControlMessage implements IControlMessage {
   private IControlMessage.TransmissionType transmissionType;
   private Text vertexValues = new Text("");
   private List<BytesWritable> extraInfo;
+  // Id of -1 signifies not set
   private int sourcePartitionID;
 
   public ControlMessage() {
     transmissionType = IControlMessage.TransmissionType.NORMAL;
     extraInfo = Lists.newArrayList();
+    sourcePartitionID = -1;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     WritableUtils.writeEnum(out, transmissionType);
+    out.writeInt(sourcePartitionID);
     out.writeInt(extraInfo.size());
     for (BytesWritable info : extraInfo) {
       info.write(out);
     }
 
     if (isPartitionMessage()) {
-      out.writeInt(sourcePartitionID);
+      //out.writeInt(sourcePartitionID);
     } else if (isVertexMessage()) {
       vertexValues.write(out);
     }
@@ -67,6 +65,7 @@ class ControlMessage implements IControlMessage {
   @Override
   public void readFields(DataInput in) throws IOException {
     transmissionType = WritableUtils.readEnum(in, IControlMessage.TransmissionType.class);
+    sourcePartitionID = in.readInt();
     extraInfo = Lists.newArrayList();
     int extraInfoSize;
     extraInfoSize = in.readInt();
@@ -76,7 +75,7 @@ class ControlMessage implements IControlMessage {
       extraInfo.add(info);
     }
     if (isPartitionMessage()) {
-      sourcePartitionID = in.readInt();
+      //sourcePartitionID = in.readInt();
     } else if (isVertexMessage()) {
       vertexValues.readFields(in);
     }
@@ -93,7 +92,11 @@ class ControlMessage implements IControlMessage {
   }
 
   public void setPartitionID(int partitionID) {
-    this.setPartitionID(partitionID);
+    this.sourcePartitionID = partitionID;
+  }
+  
+  public int getPartitionID() {
+    return this.sourcePartitionID;
   }
 
   // remove this and just use extrainfo
