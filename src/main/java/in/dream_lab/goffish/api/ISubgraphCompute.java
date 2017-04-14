@@ -17,7 +17,6 @@
  */
 package in.dream_lab.goffish.api;
 
-import java.util.Collection;
 import org.apache.hadoop.io.Writable;
 
 /*
@@ -38,7 +37,7 @@ public interface ISubgraphCompute<S extends Writable, V extends Writable, E exte
 
   long getSuperstep();
 
-  void compute(Collection<IMessage<K, M>> messages);
+  void compute(Iterable<IMessage<K, M>> messages);
 
   void sendMessage(K subgraphID, M message);
 

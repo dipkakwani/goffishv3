@@ -16,7 +16,6 @@
 
 package in.dream_lab.goffish.api;
 
-import in.dream_lab.goffish.api.ISubgraphCompute;
 import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;

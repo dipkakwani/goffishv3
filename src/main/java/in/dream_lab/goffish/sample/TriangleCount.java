@@ -67,7 +67,7 @@ public class TriangleCount extends
   }
 
   @Override
-  public void compute(Collection<IMessage<LongWritable, LongArrayListWritable>> messageList) {
+  public void compute(Iterable<IMessage<LongWritable, LongArrayListWritable>> messageList) {
 
     // Convert adjacency list to adjacency set
     if (getSuperstep() == 0) {
@@ -191,7 +191,7 @@ public class TriangleCount extends
    * Unpacks the messages such that there is a list of pair of message vertex id
    * and source vertex Ids associated with the each target vertex.
    */
-  void unpackMessages(Collection<IMessage<LongWritable, LongArrayListWritable>> messageList,
+  void unpackMessages(Iterable<IMessage<LongWritable, LongArrayListWritable>> messageList,
       Map<Long, List<Pair<Long, Long>>> ids) {
     for (IMessage<LongWritable, LongArrayListWritable> messageItem : messageList) {
       LongArrayListWritable message = messageItem.getMessage();

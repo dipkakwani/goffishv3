@@ -16,26 +16,17 @@
 
 package in.dream_lab.goffish.sample;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
-
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-
 import in.dream_lab.goffish.SubgraphCompute;
 import in.dream_lab.goffish.api.IEdge;
 import in.dream_lab.goffish.api.IMessage;
 import in.dream_lab.goffish.api.IRemoteVertex;
 import in.dream_lab.goffish.api.IVertex;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 /***
  * Calculates single source shortest path from a single source to every other
@@ -50,7 +41,7 @@ import in.dream_lab.goffish.api.IVertex;
  * @author simmhan
  *
  */
-public class SingleSourceShortestPath extends
+public class SingleSourceShortestPathWeighted extends
     SubgraphCompute<LongWritable, LongWritable, LongWritable, Text, LongWritable, LongWritable, LongWritable> {
 
   // Input Variables
@@ -72,7 +63,7 @@ public class SingleSourceShortestPath extends
   private static int verbosity = -1;
   long subgraphId;//partitionId, subgraphId;
 
-  public SingleSourceShortestPath(String initmsg) {
+  public SingleSourceShortestPathWeighted(String initmsg) {
     this.sourceVertexID = Long.parseLong(initmsg);
   }
   
@@ -151,13 +142,13 @@ public class SingleSourceShortestPath extends
       if (getSuperstep() == 0) {
 
         // get input variables from init message
-        if (packedSubGraphMessages.size() == 0) {
-          throw new RuntimeException(
-              "Initial subgraph message was missing! Require sourceVertexID to be passed");
-        }
+//        if (packedSubGraphMessages.size() == 0) {
+//          throw new RuntimeException(
+//              "Initial subgraph message was missing! Require sourceVertexID to be passed");
+//        }
 
-        sourceVertexID = Long
-            .parseLong(packedSubGraphMessages.iterator().next().getMessage().toString());
+//        sourceVertexID = Long
+//            .parseLong(packedSubGraphMessages.iterator().next().getMessage().toString());
 
         log("Initializing source vertex = " + sourceVertexID);
 
@@ -318,6 +309,32 @@ public class SingleSourceShortestPath extends
 
     ///////////////////////////////////////////////
     /// Log the distance map
+/*    try {
+      Path filepath = logRootDir
+          .resolve("from-" + sourceVertexID + "-pt-" + partition.getId()
+              + "-sg-" + getSubgraph().getSubgraphID().get() + "-" + getSuperStep() + ".sssp");
+      System.out.println("Writing mappings to file " + filepath);
+      File file = new File(filepath.toString());
+      PrintWriter writer = new PrintWriter(file);
+      writer.println("# Source vertex," + sourceVertexID);
+      writer.println("## Sink vertex, Distance, Sink Parent");
+      for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : getSubgraph()
+          .getVertices()) {
+        if (!v.isRemote()) { // print only non-remote vertices
+          DistanceParentPair distanceParentPair = shortestDistanceMap
+              .get(v.getVertexID().get());
+          if (distanceParentPair.distance != Short.MAX_VALUE) // print only
+                                                              // connected
+                                                              // vertices
+            writer.println(v.getVertexID().get() + "," + distanceParentPair.distance + ","
+                + distanceParentPair.parent);
+        }
+      }
+      writer.flush();
+      writer.close();
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }*/
     System.out.println("# Source vertex," + sourceVertexID);
     System.out.println("## Sink vertex, Distance, Sink Parent");
     for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> v : getSubgraph()
@@ -460,7 +477,8 @@ public class SingleSourceShortestPath extends
         // get the weight of the edge to childVertex
         // assume default edge weight is 1, unless a different value is given by
         // the instance
-        int edgeWeight = 1;
+        // NOTE: This change makes the algorithm work for weighted graph.
+        int edgeWeight = (int)e.getValue().get();
 
         // calculate potential new distance for child
         int newChildDistance = (distanceToCurrent + edgeWeight); // FIXME:

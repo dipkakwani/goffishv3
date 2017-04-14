@@ -18,10 +18,8 @@
 
 package in.dream_lab.goffish.sample;
 
-import java.io.IOException;
-
-import in.dream_lab.goffish.LongLongJSONReader;
-import in.dream_lab.goffish.humus.api.NonSplitTextInputFormat;
+import in.dream_lab.goffish.GraphJob;
+import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -29,16 +27,15 @@ import org.apache.hama.HamaConfiguration;
 import org.apache.hama.bsp.TextInputFormat;
 import org.apache.hama.bsp.TextOutputFormat;
 
-import in.dream_lab.goffish.GraphJob;
-import in.dream_lab.goffish.PartitionsLongTextAdjacencyListReader;
+import java.io.IOException;
 
-public class SingleSourceShortestPathJob {
-
+public class GenerateWeightsJob {
+  
   public static void main(String args[]) throws IOException, ClassNotFoundException, InterruptedException {
-    
+
     HamaConfiguration conf = new HamaConfiguration();
-    GraphJob job = new GraphJob(conf, SingleSourceShortestPath.class);
-    job.setJobName("Single Source Shortest Path");
+    GraphJob job = new GraphJob(conf, GenerateWeights.class);
+    job.setJobName("Generate Weights");
     job.setInputFormat(TextInputFormat.class);
     job.setInputKeyClass(LongWritable.class);
     job.setInputValueClass(LongWritable.class);
@@ -48,16 +45,14 @@ public class SingleSourceShortestPathJob {
     job.setInputPath(new Path(args[0]));
     job.setOutputPath(new Path(args[1]));
     job.setGraphMessageClass(Text.class);
-    //Source vertexID
-    job.setInitialInput(args[2]);
     
     /* Reader configuration */
-    job.setInputFormat(NonSplitTextInputFormat.class);
+    // job.setInputFormat(NonSplitTextInputFormat.class);
     // job.setInputFormat(TextInputFormat.class);
-    //job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
-    job.setInputReaderClass(LongLongJSONReader.class);
+    job.setInputReaderClass(PartitionsLongTextAdjacencyListReader.class);
 
     // blocks till job completed
     job.waitForCompletion(true);
   }
+
 }

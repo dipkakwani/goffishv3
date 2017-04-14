@@ -14,8 +14,6 @@ package in.dream_lab.goffish.sample;
          *      See the License for the specific language governing permissions and
          *      limitations under the License.
  */
-import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 
 import org.apache.hadoop.io.LongWritable;
@@ -46,7 +44,7 @@ public class PageRank extends
   private Map<Long, MyDouble> sums;
 
   @Override
-  public void compute(Collection<IMessage<LongWritable, Text>> messages) {
+  public void compute(Iterable<IMessage<LongWritable, Text>> messages) {
     if (getSuperstep() == 0) {
       _weights = new HashMap<>((int) getSubgraph().getVertexCount(), 1f);
       sums = new HashMap<>((int) getSubgraph().getVertexCount(), 1f);

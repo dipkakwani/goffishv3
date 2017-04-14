@@ -20,6 +20,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
+import com.google.common.collect.Iterables;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
 
@@ -94,7 +95,7 @@ public class BlockRankSubgraph extends
   }
 
   @Override
-  public void compute(Collection<IMessage<LongWritable, BytesWritable>> stuff) {
+  public void compute(Iterable<IMessage<LongWritable, BytesWritable>> stuff) {
 
     _numBlockRankFinishes = 0;
     _numPageRankFinishes = 0;
@@ -287,12 +288,12 @@ public class BlockRankSubgraph extends
     return L1norm;
   }
 
-  private List<Message> decode(Collection<IMessage<LongWritable, BytesWritable>> stuff) {
-    if (stuff.isEmpty()) {
+  private List<Message> decode(Iterable<IMessage<LongWritable, BytesWritable>> stuff) {
+    if (Iterables.isEmpty(stuff)) {
       return Collections.emptyList();
     }
 
-    ArrayList<Message> messages = new ArrayList<>(stuff.size());
+    ArrayList<Message> messages = new ArrayList<>(Iterables.size(stuff));
     for (IMessage<LongWritable, BytesWritable> s : stuff) {
       Message m = Message.fromBytes(s.getMessage().getBytes());
       if (m.SubgraphMessage) {

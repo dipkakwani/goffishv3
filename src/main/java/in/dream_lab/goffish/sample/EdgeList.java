@@ -17,8 +17,6 @@
  */
 package in.dream_lab.goffish.sample;
 
-import java.util.Collection;
-
 import org.apache.hadoop.io.LongWritable;
 
 import in.dream_lab.goffish.SubgraphCompute;
@@ -36,7 +34,7 @@ public class EdgeList extends
 
   @Override
   public void compute(
-      Collection<IMessage<LongWritable, LongWritable>> messages) {
+      Iterable<IMessage<LongWritable, LongWritable>> messages) {
     if (getSuperstep() == 0) {
       for (IVertex<LongWritable, LongWritable, LongWritable, LongWritable> vertex : getSubgraph()
           .getLocalVertices()) {
