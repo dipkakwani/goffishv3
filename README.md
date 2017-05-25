@@ -1,5 +1,8 @@
 # GoFFish V3
+The updated repo is available at https://github.com/dream-lab/goffish_v3
+
 ### TODO
+
 1. ~~Make it work for VertexCount example.~~
 2. Use generics and refactor code.
 3. Separate reader logic from GraphJobRunner. Support three types of InputReader:
